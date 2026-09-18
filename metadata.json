@@ -1,0 +1,6 @@
+{
+  "name": "Men's Fashion & Footwear Platform",
+  "description": "A scalable, production-ready e-commerce platform starting with men's footwear and designed for general menswear expansion.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
