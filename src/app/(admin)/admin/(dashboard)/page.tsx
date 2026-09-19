@@ -9,6 +9,8 @@ import {
   Tag,
   Users,
   Clock,
+  Plus,
+  ShieldAlert,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -19,7 +21,12 @@ import { orderService } from "@/lib/orders/order-service";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDashboardPage() {
+interface AdminDashboardPageProps {
+  searchParams: Promise<{ error?: string }>;
+}
+
+export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
+  const resolvedParams = await searchParams;
   const [productsData, inventoryData, orders] = await Promise.all([
     productService.getProducts({
       status: "all",
@@ -37,6 +44,23 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-8 max-w-7xl">
+      {/* Informative banner if redirected due to role restriction */}
+      {resolvedParams.error === "forbidden" && (
+        <div className="p-4 bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>Access Notice:</strong> Your administrative account does not possess permissions for that specific module. You have been returned to the main operations overview.
+            </span>
+          </div>
+          <Link href="/admin">
+            <Button size="sm" variant="outline" className="text-xs border-amber-300 text-amber-900 hover:bg-amber-100">
+              Dismiss
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Page Title & Status */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-200 pb-6">
         <div>
@@ -48,6 +72,12 @@ export default async function AdminDashboardPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/admin/products/new">
+            <Button size="sm" className="bg-neutral-900 text-white hover:bg-neutral-800 text-xs uppercase tracking-wider">
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add Product
+            </Button>
+          </Link>
           <Badge variant="success" className="px-2.5 py-1">
             System Operational
           </Badge>

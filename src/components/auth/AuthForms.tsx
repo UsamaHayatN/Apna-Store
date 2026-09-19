@@ -27,6 +27,17 @@ export function AuthForms({ initialMode = "login", redirectTo = "/account" }: Au
     if (res && !res.success) {
       setState(res);
       setLoading(false);
+    } else if (res && res.success) {
+      const token = res.data?.token as string;
+      if (token) {
+        try {
+          document.cookie = `auth_session=${token}; path=/; max-age=604800; SameSite=None; Secure; Partitioned`;
+          sessionStorage.setItem("auth_session", token);
+          localStorage.setItem("auth_session", token);
+        } catch {}
+      }
+      const destination = (res.data?.redirectTo as string) || redirectTo || "/account";
+      window.location.href = destination;
     }
   };
 
@@ -40,6 +51,17 @@ export function AuthForms({ initialMode = "login", redirectTo = "/account" }: Au
     if (res && !res.success) {
       setState(res);
       setLoading(false);
+    } else if (res && res.success) {
+      const token = res.data?.token as string;
+      if (token) {
+        try {
+          document.cookie = `auth_session=${token}; path=/; max-age=604800; SameSite=None; Secure; Partitioned`;
+          sessionStorage.setItem("auth_session", token);
+          localStorage.setItem("auth_session", token);
+        } catch {}
+      }
+      const destination = (res.data?.redirectTo as string) || redirectTo || "/account";
+      window.location.href = destination;
     }
   };
 

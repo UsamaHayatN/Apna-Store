@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { CheckCircle2, AlertCircle, ShieldCheck, Mail, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 
-interface VerifyEmailProps {
-  searchParams: Promise<{ token?: string }>;
-}
-
-export default function VerifyEmailPage({ searchParams }: VerifyEmailProps) {
-  const resolvedParams = use(searchParams);
-  const tokenFromUrl = resolvedParams.token || "";
+function VerifyEmailForm() {
+  const searchParams = useSearchParams();
+  const tokenFromUrl = searchParams.get("token") || "";
 
   const [token, setToken] = useState(tokenFromUrl);
   const [loading, setLoading] = useState(false);
@@ -168,5 +165,19 @@ export default function VerifyEmailPage({ searchParams }: VerifyEmailProps) {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-md px-4 py-16 text-center text-xs text-neutral-400 uppercase tracking-widest">
+          Loading Email Verification...
+        </div>
+      }
+    >
+      <VerifyEmailForm />
+    </Suspense>
   );
 }

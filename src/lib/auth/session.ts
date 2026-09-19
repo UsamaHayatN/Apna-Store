@@ -48,21 +48,39 @@ export async function verifySessionToken(token: string): Promise<SessionUser | n
   }
 }
 
-export async function setSessionCookie(user: SessionUser): Promise<void> {
+export async function setSessionCookie(user: SessionUser): Promise<string> {
   const token = await createSessionToken(user);
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
+    partitioned: true,
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days in seconds
   });
+  return token;
 }
 
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+  try {
+    cookieStore.delete(SESSION_COOKIE_NAME);
+  } catch {
+    // ignore
+  }
+  try {
+    cookieStore.set(SESSION_COOKIE_NAME, "", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      partitioned: true,
+      path: "/",
+      maxAge: 0,
+    });
+  } catch {
+    // ignore
+  }
 }
 
 /**
@@ -79,34 +97,44 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     const session = await verifySessionToken(token);
     if (!session) return null;
 
-    // Verify against database to enforce real-time suspension/disablement
+    // Check JWT payload status directly
+    if (session.status === "disabled" || session.status === "suspended") {
+      return null;
+    }
+
+    // Verify against database or memory repository to enforce real-time status updates
     const liveUser = await findUserById(session.id);
-    if (!liveUser) {
-      try {
-        cookieStore.delete(SESSION_COOKIE_NAME);
-      } catch {
-        // Safe to ignore in contexts where cookies are read-only
+    if (liveUser) {
+      if (liveUser.status === "disabled" || liveUser.status === "suspended") {
+        try {
+          cookieStore.delete(SESSION_COOKIE_NAME);
+        } catch {
+          // Safe to ignore in contexts where cookies are read-only
+        }
+        return null;
       }
-      return null;
+
+      return {
+        id: liveUser.id,
+        email: liveUser.email,
+        firstName: liveUser.firstName,
+        lastName: liveUser.lastName,
+        role: liveUser.role,
+        status: liveUser.status,
+        emailVerifiedAt: liveUser.emailVerifiedAt,
+      };
     }
 
-    if (liveUser.status === "disabled" || liveUser.status === "suspended") {
-      try {
-        cookieStore.delete(SESSION_COOKIE_NAME);
-      } catch {
-        // Safe to ignore in contexts where cookies are read-only
-      }
-      return null;
-    }
-
+    // If liveUser is not found (e.g., in-memory store refreshed across worker threads),
+    // trust the cryptographically verified JWT payload rather than destroying user session.
     return {
-      id: liveUser.id,
-      email: liveUser.email,
-      firstName: liveUser.firstName,
-      lastName: liveUser.lastName,
-      role: liveUser.role,
-      status: liveUser.status,
-      emailVerifiedAt: liveUser.emailVerifiedAt,
+      id: session.id,
+      email: session.email,
+      firstName: session.firstName,
+      lastName: session.lastName,
+      role: session.role,
+      status: session.status,
+      emailVerifiedAt: session.emailVerifiedAt,
     };
   } catch {
     return null;

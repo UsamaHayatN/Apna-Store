@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { adminLoginAction, ActionState } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -8,23 +9,22 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { ShieldCheck, Lock, AlertCircle, ArrowLeft, Key } from "lucide-react";
 import Link from "next/link";
 
-interface AdminLoginPageProps {
-  searchParams: Promise<{ error?: string; redirect?: string }>;
-}
+function AdminLoginForm() {
+  const searchParams = useSearchParams();
+  const errorParam = searchParams.get("error");
+  const redirectParam = searchParams.get("redirect");
 
-export default function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
-  const resolvedParams = use(searchParams);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [state, setState] = useState<ActionState | null>(null);
 
   const initialError =
-    resolvedParams.error === "restricted"
+    errorParam === "restricted"
       ? "Access denied. Your account does not possess staff or administrator privileges."
-      : resolvedParams.error === "disabled"
+      : errorParam === "disabled"
       ? "Your administrative credentials have been suspended or deactivated."
-      : resolvedParams.error === "forbidden"
+      : errorParam === "forbidden"
       ? "You lack the specific administrative permission required for that resource."
       : null;
 
@@ -35,10 +35,24 @@ export default function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
     const formData = new FormData();
     formData.append("email", email);
     formData.append("password", password);
+    formData.append("redirectTo", redirectParam || "/admin");
     const res = await adminLoginAction(null, formData);
     if (res && !res.success) {
       setState(res);
       setLoading(false);
+    } else if (res && res.success) {
+      const token = res.data?.token as string;
+      if (token) {
+        try {
+          document.cookie = `auth_session=${token}; path=/; max-age=604800; SameSite=None; Secure; Partitioned`;
+          sessionStorage.setItem("auth_session", token);
+          localStorage.setItem("auth_session", token);
+        } catch {
+          // ignore
+        }
+      }
+      const destination = (res.data?.redirectTo as string) || redirectParam || "/admin";
+      window.location.href = destination;
     }
   };
 
@@ -158,7 +172,16 @@ export default function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
             <span className="text-[10px] text-neutral-500">Click to load</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button
+              type="button"
+              onClick={() => handleQuickFill("usamanissoana555@gmail.com", "OwnerPass123!")}
+              className="p-2 text-left bg-neutral-900 border border-amber-600/40 hover:border-amber-400 transition-colors text-[11px]"
+            >
+              <div className="font-semibold text-amber-300">Owner (Dev)</div>
+              <div className="text-[10px] text-neutral-400 truncate">usamanissoana555</div>
+            </button>
+
             <button
               type="button"
               onClick={() => handleQuickFill("owner@atelier.internal", "OwnerPass123!")}
@@ -199,5 +222,19 @@ export default function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-neutral-950 text-neutral-400 flex items-center justify-center text-xs uppercase tracking-widest">
+          Loading Security Console...
+        </div>
+      }
+    >
+      <AdminLoginForm />
+    </Suspense>
   );
 }

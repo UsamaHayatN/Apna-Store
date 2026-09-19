@@ -35,7 +35,10 @@ async function verifyToken(token: string): Promise<DecodedSession | null> {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const paramToken = request.nextUrl.searchParams.get("auth_token") || request.nextUrl.searchParams.get("token");
+  const headerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const cookieToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const token = cookieToken || paramToken || headerToken || undefined;
 
   const session = token ? await verifyToken(token) : null;
   const isAuthenticated = !!session && session.status !== "disabled" && session.status !== "suspended";
@@ -49,25 +52,40 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/admin")) {
     // If accessing the admin login page
     if (pathname === "/admin/login") {
-      // If already authenticated as staff or admin, redirect directly to admin dashboard
+      // If already authenticated as staff or admin, redirect to target or admin dashboard
       if (isStaffOrAdmin) {
-        return NextResponse.redirect(new URL("/admin", request.url));
+        const targetRedirect = request.nextUrl.searchParams.get("redirect") || "/admin";
+        const cleanTarget = targetRedirect.startsWith("/admin") && targetRedirect !== "/admin/login"
+          ? targetRedirect
+          : "/admin";
+        const redirectRes = NextResponse.redirect(new URL(cleanTarget, request.url));
+        if (paramToken && token) {
+          redirectRes.cookies.set(SESSION_COOKIE_NAME, token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            partitioned: true,
+            path: "/",
+            maxAge: 60 * 60 * 24 * 7,
+          });
+        }
+        return redirectRes;
       }
-      return NextResponse.next();
-    }
+      // Non-authenticated users can view login page; headers will be appended below
+    } else {
+      // All other /admin routes require authenticated staff/admin
+      if (!isAuthenticated) {
+        const loginUrl = new URL("/admin/login", request.url);
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
 
-    // All other /admin routes require authenticated staff/admin
-    if (!isAuthenticated) {
-      const loginUrl = new URL("/admin/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    if (!isStaffOrAdmin) {
-      // A regular customer attempting to access the admin portal
-      const loginUrl = new URL("/admin/login", request.url);
-      loginUrl.searchParams.set("error", "restricted");
-      return NextResponse.redirect(loginUrl);
+      if (!isStaffOrAdmin) {
+        // A regular customer attempting to access the admin portal
+        const loginUrl = new URL("/admin/login", request.url);
+        loginUrl.searchParams.set("error", "restricted");
+        return NextResponse.redirect(loginUrl);
+      }
     }
   }
 
@@ -100,11 +118,25 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set("x-user-role", session.role);
   }
 
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+
+  // If token was supplied via parameter (e.g. iframe auth bridge), set the cookie
+  if (paramToken && token && isAuthenticated) {
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      partitioned: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+  }
+
+  return response;
 }
 
 export const config = {

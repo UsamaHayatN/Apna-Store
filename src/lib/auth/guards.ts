@@ -32,8 +32,10 @@ export async function requireUser(redirectUrl?: string): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) {
     if (redirectUrl) {
-      if (redirectUrl.startsWith("/admin")) {
+      if (redirectUrl === "/admin/login" || redirectUrl.startsWith("/admin/login?")) {
         redirect(redirectUrl);
+      } else if (redirectUrl.startsWith("/admin")) {
+        redirect(`/admin/login?redirect=${encodeURIComponent(redirectUrl)}`);
       } else {
         redirect(`/account?redirect=${encodeURIComponent(redirectUrl)}`);
       }

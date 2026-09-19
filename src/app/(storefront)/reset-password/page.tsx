@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { resetPasswordAction, ActionState } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -8,13 +9,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { KeyRound, AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
-interface ResetPasswordProps {
-  searchParams: Promise<{ token?: string }>;
-}
-
-export default function ResetPasswordPage({ searchParams }: ResetPasswordProps) {
-  const resolvedParams = use(searchParams);
-  const tokenFromUrl = resolvedParams.token || "";
+function ResetPasswordForm() {
+  const searchParams = useSearchParams();
+  const tokenFromUrl = searchParams.get("token") || "";
 
   const [token, setToken] = useState(tokenFromUrl);
   const [loading, setLoading] = useState(false);
@@ -126,5 +123,19 @@ export default function ResetPasswordPage({ searchParams }: ResetPasswordProps) 
         </Card>
       )}
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-md px-4 py-16 text-center text-xs text-neutral-400 uppercase tracking-widest">
+          Loading Security Form...
+        </div>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

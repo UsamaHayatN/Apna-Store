@@ -6,6 +6,7 @@ import { requireAdminOrStaff } from "@/lib/auth/guards";
 import { listStaffAndAdminUsers } from "@/lib/auth/user-store";
 import { StaffManagementCard } from "@/components/admin/StaffManagementCard";
 import { AuditTrailCard } from "@/components/admin/AuditTrailCard";
+import { DatabaseStatusCard } from "@/components/admin/DatabaseStatusCard";
 import { getRecentAuditLogs } from "@/lib/auth/audit";
 import { hasPermission } from "@/lib/auth/permissions";
 
@@ -25,6 +26,9 @@ export default async function AdminSettingsPage() {
           Operational Parameters
         </h1>
       </div>
+
+      {/* Database & Supabase Connectivity Status */}
+      <DatabaseStatusCard />
 
       {/* Staff & User Management Foundation */}
       <StaffManagementCard currentUser={currentUser} staffUsers={staffUsers} />

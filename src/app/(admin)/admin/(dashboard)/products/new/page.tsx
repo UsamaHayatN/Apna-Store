@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function NewProductPage() {
   // Server-side authorization check: must have products.create permission
-  await requirePermission("products.create", "/admin/login");
+  await requirePermission("products.create", "/admin?error=forbidden");
 
   const [categories, productTypes] = await Promise.all([
     productService.getCategories(),

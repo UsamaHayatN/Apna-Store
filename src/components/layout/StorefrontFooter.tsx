@@ -105,19 +105,19 @@ export function StorefrontFooter() {
                 </Link>
               </li>
               <li>
-                <span className="hover:text-[#111111] transition-colors cursor-pointer">
+                <Link href="/shipping-returns#shipping" className="hover:text-[#111111] transition-colors">
                   Shipping & Deliveries
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-[#111111] transition-colors cursor-pointer">
+                <Link href="/shipping-returns#returns" className="hover:text-[#111111] transition-colors">
                   Returns & Exchanges
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-[#111111] transition-colors cursor-pointer">
+                <Link href="/shipping-returns#payments" className="hover:text-[#111111] transition-colors">
                   Payment Options
-                </span>
+                </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-[#111111] transition-colors">
@@ -212,7 +212,7 @@ export function StorefrontFooter() {
               href="/privacy-policy"
               className="text-[#AAAAAA] hover:text-[#FFFFFF] transition-colors whitespace-nowrap"
             >
-              Nike Privacy Policy
+              Privacy Policy
             </Link>
           </nav>
         </div>

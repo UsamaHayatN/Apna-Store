@@ -38,9 +38,12 @@ export async function loginAction(
   const password = (formData.get("password") as string) || "";
   const redirectTo = (formData.get("redirectTo") as string) || "/account";
 
+  let token = "";
+  let authenticatedUser: any = null;
   try {
     const user = await authenticateCredentials({ email, password });
-    await setSessionCookie(user);
+    authenticatedUser = user;
+    token = await setSessionCookie(user);
   } catch (err: unknown) {
     if (err instanceof AuthError) {
       return { success: false, error: err.message };
@@ -49,7 +52,19 @@ export async function loginAction(
   }
 
   revalidatePath("/account");
-  redirect(redirectTo);
+  return {
+    success: true,
+    message: "Session authenticated.",
+    data: {
+      token,
+      redirectTo,
+      user: {
+        id: authenticatedUser.id,
+        email: authenticatedUser.email,
+        role: authenticatedUser.role,
+      },
+    },
+  };
 }
 
 /**
@@ -77,16 +92,27 @@ export async function registerAction(
       phone: phone || undefined,
     });
 
-    await setSessionCookie(result.user);
+    const token = await setSessionCookie(result.user);
+    revalidatePath("/account");
+    return {
+      success: true,
+      message: "Registration completed successfully.",
+      data: {
+        token,
+        redirectTo,
+        user: {
+          id: result.user.id,
+          email: result.user.email,
+          role: result.user.role,
+        },
+      },
+    };
   } catch (err: unknown) {
     if (err instanceof AuthError) {
       return { success: false, error: err.message };
     }
     return { success: false, error: "Registration failed. Please check your inputs." };
   }
-
-  revalidatePath("/account");
-  redirect(redirectTo);
 }
 
 /**
@@ -220,13 +246,18 @@ export async function adminLoginAction(
 ): Promise<ActionState> {
   const email = (formData.get("email") as string) || "";
   const password = (formData.get("password") as string) || "";
+  const rawRedirect = (formData.get("redirectTo") as string) || (formData.get("redirect") as string) || "/admin";
+  const redirectTo = rawRedirect.startsWith("/admin") && rawRedirect !== "/admin/login" ? rawRedirect : "/admin";
 
+  let token = "";
+  let authenticatedUser: any = null;
   try {
     const user = await authenticateCredentials(
       { email, password },
       { requireStaffPortal: true }
     );
-    await setSessionCookie(user);
+    authenticatedUser = user;
+    token = await setSessionCookie(user);
   } catch (err: unknown) {
     if (err instanceof AuthError) {
       return { success: false, error: err.message };
@@ -235,7 +266,21 @@ export async function adminLoginAction(
   }
 
   revalidatePath("/admin");
-  redirect("/admin");
+  return {
+    success: true,
+    message: "Administrative session established.",
+    data: {
+      token,
+      redirectTo,
+      user: {
+        id: authenticatedUser.id,
+        email: authenticatedUser.email,
+        role: authenticatedUser.role,
+        firstName: authenticatedUser.firstName,
+        lastName: authenticatedUser.lastName,
+      },
+    },
+  };
 }
 
 /**

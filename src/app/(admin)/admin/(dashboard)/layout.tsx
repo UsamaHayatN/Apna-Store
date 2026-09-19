@@ -1,22 +1,13 @@
-import { headers } from "next/headers";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { AdminHeader } from "@/components/layout/AdminHeader";
 import { requireAdminOrStaff } from "@/lib/auth/guards";
 
-export default async function AdminLayout({
+export default async function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const headerList = await headers();
-  const pathname = headerList.get("x-pathname") || "";
-
-  // Dedicated login page renders in standalone fullscreen mode without sidebar
-  if (pathname === "/admin/login") {
-    return <>{children}</>;
-  }
-
-  // Enforce server-side staff/admin authorization for all other administrative routes
+  // Enforce server-side staff/admin authorization for all administrative dashboard routes
   await requireAdminOrStaff("/admin/login");
 
   return (

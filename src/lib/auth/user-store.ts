@@ -1,5 +1,5 @@
 import { AuthUser, UserRole, AccountStatus, UserAddress } from "@/types";
-import { isDatabaseConfigured, getDb, schema } from "@/lib/db";
+import { isDatabaseConfigured, getDb, schema, markDatabaseConnectionFailed } from "@/lib/db";
 import { eq, and, isNull } from "drizzle-orm";
 import crypto from "node:crypto";
 import {
@@ -19,6 +19,20 @@ import {
  * - Disabled: 'DisabledPass123!'
  */
 const SEED_USERS: AuthUser[] = [
+  {
+    id: DEV_ADMIN_USER_ID,
+    email: DEV_ADMIN_EMAIL,
+    passwordHash:
+      "cd4d56a0c51307a7551f4845b8a0d8f0:996c3825053d91ece505844903c926f0cbe6671c3c6e7a9d2d024b8b7d35f9c232bde47bf50ee29a54dadc35bfad92018a45e66cfee323fba82a1a74da6942ce",
+    firstName: "Usama",
+    lastName: "Nissoana",
+    phone: "+1 555-0100",
+    role: "owner",
+    status: "active",
+    emailVerifiedAt: "2026-01-01T00:00:00.000Z",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  },
   {
     id: "usr-owner-00000001",
     email: "owner@atelier.internal",
@@ -307,7 +321,7 @@ export async function findUserByEmail(email: string): Promise<AuthUser | null> {
         };
       }
     } catch (err) {
-      console.warn("Postgres query fallback to memory store:", err);
+      markDatabaseConnectionFailed(err);
     }
   }
 
@@ -364,7 +378,7 @@ export async function findUserById(id: string): Promise<AuthUser | null> {
         };
       }
     } catch (err) {
-      console.warn("Postgres query fallback to memory store:", err);
+      markDatabaseConnectionFailed(err);
     }
   }
 
