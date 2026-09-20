@@ -2,8 +2,7 @@ import { productService } from "@/lib/products/product-service";
 import { variantService } from "@/lib/products/variant-service";
 import { attributeService } from "@/lib/products/attribute-service";
 import { toStorefrontProduct, StorefrontProduct } from "@/lib/storefront/storefront-service";
-import { DEFAULT_PLP_CATALOG } from "@/components/storefront/ProductListingView";
-import { ProductBadgeType } from "@/components/storefront/ProductCard";
+import { DEFAULT_PLP_CATALOG, ProductBadgeType } from "@/lib/storefront/default-catalog";
 import type {
   ColorwayOption,
   SizeOption,
@@ -66,12 +65,29 @@ export interface PdpProductDetail extends StorefrontProduct {
   reviews?: ReviewItem[];
 }
 
+const pdpCache = new Map<string, { timestamp: number; data: PdpProductDetail | null }>();
+const PDP_CACHE_TTL = 30_000; // 30 seconds
+
 export const pdpService = {
+  /**
+   * Clears PDP memory cache
+   */
+  clearCache(): void {
+    pdpCache.clear();
+  },
+
   /**
    * Loads product detail for the storefront with full generic attribute matrix
    * and inventory-aware variant combinations.
    */
   async getPdpProduct(slug: string): Promise<PdpProductDetail | null> {
+    const cacheKey = slug.toLowerCase().trim();
+    const cached = pdpCache.get(cacheKey);
+    const now = Date.now();
+    if (cached && now - cached.timestamp < PDP_CACHE_TTL) {
+      return cached.data;
+    }
+
     // 1. Attempt to load from database / product-service
     const dbProduct = await productService.getProductBySlug(slug);
 
@@ -238,7 +254,7 @@ export const pdpService = {
       ? pdpVariants.some((v) => v.inStock)
       : (dbProduct?.stockCount ?? 10) > 0;
 
-    return {
+    const productDetail: PdpProductDetail = {
       id,
       slug,
       title,
@@ -284,6 +300,9 @@ export const pdpService = {
         ogImage: media[0]?.url,
       },
     };
+
+    pdpCache.set(cacheKey, { timestamp: now, data: productDetail });
+    return productDetail;
   },
 
   /**

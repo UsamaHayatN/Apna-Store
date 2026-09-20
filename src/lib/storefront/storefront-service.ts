@@ -312,9 +312,21 @@ class StorefrontService {
   }
 
   /**
+   * Clears storefront homepage and category cache
+   */
+  clearCache(): void {
+    homepageCache = null;
+  }
+
+  /**
    * Aggregates all homepage datasets concurrently with server-side caching / performance.
    */
   async getHomepageData(): Promise<HomepageData> {
+    const now = Date.now();
+    if (homepageCache && now - homepageCache.timestamp < HOMEPAGE_CACHE_TTL) {
+      return homepageCache.data;
+    }
+
     const [featuredCategories, featuredProducts, newArrivals, featuredCollection] =
       await Promise.all([
         this.getFeaturedCategories(4),
@@ -323,13 +335,19 @@ class StorefrontService {
         this.getFeaturedCollection(),
       ]);
 
-    return {
+    const data: HomepageData = {
       featuredCategories,
       featuredProducts,
       newArrivals,
       featuredCollection,
     };
+
+    homepageCache = { timestamp: now, data };
+    return data;
   }
 }
+
+let homepageCache: { timestamp: number; data: HomepageData } | null = null;
+const HOMEPAGE_CACHE_TTL = 15_000;
 
 export const storefrontService = new StorefrontService();

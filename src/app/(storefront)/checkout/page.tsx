@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth/session";
 import { getUserAddresses } from "@/lib/auth/user-store";
 import { cartService } from "@/lib/cart/cart-service";
-import { cookies } from "next/headers";
+import { resolveCartIdentity } from "@/lib/cart/cart-session";
 import { CheckoutClient } from "@/components/checkout/CheckoutClient";
 
 export const metadata: Metadata = {
@@ -12,13 +12,9 @@ export const metadata: Metadata = {
 
 export default async function CheckoutPage() {
   const user = await getSessionUser();
-  const cookieStore = await cookies();
-  const guestSessionToken = cookieStore.get("atelier_guest_cart_token")?.value;
+  const { identity } = await resolveCartIdentity();
 
-  const cart = await cartService.getCart({
-    userId: user?.id,
-    guestSessionToken,
-  });
+  const cart = await cartService.getCart(identity);
 
   const savedAddresses = user ? await getUserAddresses(user.id) : [];
 

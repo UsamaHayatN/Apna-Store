@@ -1,4 +1,5 @@
 import { eq, and, sql, desc, asc, isNull, inArray } from "drizzle-orm";
+import crypto from "node:crypto";
 import { getDb, isDatabaseConfigured } from "@/lib/db";
 import {
   carts as cartsTable,
@@ -103,14 +104,15 @@ export const cartService = {
    * Resolves or creates a cart record for either an authenticated user or a guest session.
    * Enforces IDOR security: carts can only be accessed with verified userId or verified guest token.
    */
-  async getOrCreateCart(identity: {
+  async getOrCreateCart(identity?: {
     userId?: string | null;
     guestSessionToken?: string | null;
   }): Promise<{ id: string; userId?: string | null; guestSessionToken?: string | null }> {
-    const { userId, guestSessionToken } = identity;
+    let userId = identity?.userId ?? null;
+    let guestSessionToken = identity?.guestSessionToken ?? null;
 
     if (!userId && !guestSessionToken) {
-      throw new Error("Cannot resolve cart without authenticated userId or guest session token.");
+      guestSessionToken = crypto.randomUUID();
     }
 
     if (isDatabaseConfigured()) {
@@ -230,11 +232,31 @@ export const cartService = {
    * Retrieves cart summary with all line items.
    * Performs authoritative server-side price revalidation and stock verification.
    */
-  async getCart(identity: {
+  async getCart(identity?: {
     userId?: string | null;
     guestSessionToken?: string | null;
   }): Promise<CartSummary> {
-    const cartRecord = await this.getOrCreateCart(identity);
+    const userId = identity?.userId ?? null;
+    const guestSessionToken = identity?.guestSessionToken ?? null;
+
+    if (!userId && !guestSessionToken) {
+      return {
+        id: "empty-cart",
+        userId: null,
+        guestSessionToken: null,
+        items: [],
+        itemCount: 0,
+        lineCount: 0,
+        subtotal: 0,
+        currency: "USD",
+        freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
+        freeShippingQualified: false,
+        amountUntilFreeShipping: FREE_SHIPPING_THRESHOLD,
+        hasUnavailableItems: false,
+      };
+    }
+
+    const cartRecord = await this.getOrCreateCart({ userId, guestSessionToken });
     const cartId = cartRecord.id;
 
     let rawItems: {

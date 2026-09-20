@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/auth/session";
 import { cartService } from "@/lib/cart/cart-service";
+import { resolveCartIdentity } from "@/lib/cart/cart-session";
 import { orderService } from "@/lib/orders/order-service";
 import { paymentService } from "@/lib/payments/payment-service";
 import { isDatabaseConfigured, getDb, schema } from "@/lib/db";
@@ -106,15 +107,10 @@ export async function processCheckoutAction(
   payload: CheckoutPayload
 ): Promise<ProcessCheckoutResult> {
   try {
-    const user = await getSessionUser();
-    const cookieStore = await cookies();
-    const guestSessionToken = cookieStore.get("atelier_guest_cart_token")?.value;
+    const { identity } = await resolveCartIdentity();
 
     // Load active cart
-    const cart = await cartService.getCart({
-      userId: user?.id,
-      guestSessionToken,
-    });
+    const cart = await cartService.getCart(identity);
 
     if (!cart || cart.items.length === 0) {
       return { success: false, error: "Your shopping bag is currently empty." };
@@ -183,7 +179,7 @@ export async function processCheckoutAction(
 
     // Atomic order creation
     const order = await orderService.createOrder({
-      userId: user?.id || null,
+      userId: identity.userId || null,
       customerEmail: payload.customerEmail.trim().toLowerCase(),
       customerPhone: payload.customerPhone || addr.phone || null,
       shippingAddress: addr,
@@ -220,10 +216,7 @@ export async function processCheckoutAction(
     }
 
     // Clear cart immediately
-    await cartService.clearCart({
-      userId: user?.id,
-      guestSessionToken,
-    });
+    await cartService.clearCart(identity);
 
     revalidatePath("/cart");
     revalidatePath("/account");

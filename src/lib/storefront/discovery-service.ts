@@ -124,7 +124,17 @@ const SYSTEM_QUERY_KEYS = new Set([
   "limit",
 ]);
 
+// Ultra-fast memory cache for faceted discovery queries
+const discoveryCache = new Map<string, { timestamp: number; data: DiscoveryResult }>();
+const CACHE_TTL_MS = 30_000; // 30 seconds
+
 export class DiscoveryService {
+  /**
+   * Clears discovery memory cache
+   */
+  clearCache(): void {
+    discoveryCache.clear();
+  }
   /**
    * Normalizes raw Next.js searchParams into a typed DiscoveryQueryParams object.
    */
@@ -233,18 +243,31 @@ export class DiscoveryService {
    * Works seamlessly with PostgreSQL when configured and memory store otherwise.
    */
   async searchAndFilter(params: DiscoveryQueryParams): Promise<DiscoveryResult> {
-    const page = params.page || 1;
-    const limit = params.limit || 20;
-
-    if (isDatabaseConfigured()) {
-      try {
-        return await this.searchAndFilterPostgres(params);
-      } catch (err) {
-        console.warn("PostgreSQL discovery search failed, falling back to memory:", err);
-      }
+    const cacheKey = JSON.stringify(params);
+    const cached = discoveryCache.get(cacheKey);
+    const now = Date.now();
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
     }
 
-    return await this.searchAndFilterMemory(params);
+    let result: DiscoveryResult;
+    if (isDatabaseConfigured()) {
+      try {
+        result = await this.searchAndFilterPostgres(params);
+      } catch (err) {
+        console.warn("PostgreSQL discovery search failed, falling back to memory:", err);
+        result = await this.searchAndFilterMemory(params);
+      }
+    } else {
+      result = await this.searchAndFilterMemory(params);
+    }
+
+    if (discoveryCache.size > 200) {
+      const oldestKey = discoveryCache.keys().next().value;
+      if (oldestKey) discoveryCache.delete(oldestKey);
+    }
+    discoveryCache.set(cacheKey, { timestamp: now, data: result });
+    return result;
   }
 
   /**

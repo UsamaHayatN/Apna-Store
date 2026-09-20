@@ -7,23 +7,8 @@ import { Heart, ShoppingBag } from "lucide-react";
 import { StorefrontProduct } from "@/lib/storefront/storefront-service";
 import { siteConfig } from "@/config/site";
 import { useWishlist } from "@/context/WishlistContext";
-
-/* 
-  EXACT PRODUCT CARD GRID SYSTEM DECODING:
-  - Card Background: #FFFFFF (Light-100) pure white canvas
-  - Product Image Container: Offset light grey box #F5F5F5 (Light-200)
-  - Top-Left Floating Badges (Rounded Pills rounded-full on #FFFFFF background):
-    * Orange Pill (#D37918 text): "Best Seller"
-    * Red Pill (#D33918 text): "Extra 20% off" / "Extra 10% off"
-    * Green Pill (#007D48 text): "Sustainable Materials"
-  - Top-Right Action: Wishlist Heart icon overlay (#111111 icon, #FFFFFF rounded-full circle)
-  - Card Typography & Metadata Below Image:
-    * Line 1: Product Title in bold (#111111) on left, Price (e.g. "$98.30") aligned right (#111111)
-    * Line 2: Category / Sub-description in grey (#757575) (e.g., "Men's Shoes", "Apparel", "Gear")
-    * Line 3: Variant Count in grey (#757575) (e.g., "6 Colour", "1 Colour", "4 Colour")
-*/
-
-export type ProductBadgeType = "best-seller" | "extra-discount" | "sustainable" | "none";
+import { ProductBadgeType } from "@/lib/storefront/default-catalog";
+export type { ProductBadgeType };
 
 interface ProductCardProps {
   product: StorefrontProduct;

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireAdminOrStaff, requirePermission } from "@/lib/auth/guards";
 import { productService } from "@/lib/products/product-service";
+import { discoveryService } from "@/lib/storefront/discovery-service";
+import { pdpService } from "@/lib/storefront/pdp-service";
 import {
   createProductSchema,
   updateProductSchema,
@@ -61,6 +63,11 @@ export async function createProductAction(
     }
 
     const created = await productService.createProduct(parsed.data, user.id);
+    discoveryService.clearCache();
+    pdpService.clearCache();
+    revalidatePath("/shop");
+    revalidatePath("/category");
+    revalidatePath("/collection");
     revalidatePath("/admin/products");
     revalidatePath("/admin");
     return { success: true, data: created };
@@ -102,6 +109,11 @@ export async function updateProductAction(
       parsed.data,
       user.id
     );
+    discoveryService.clearCache();
+    pdpService.clearCache();
+    revalidatePath("/shop");
+    revalidatePath("/category");
+    revalidatePath("/collection");
     revalidatePath("/admin/products");
     revalidatePath(`/admin/products/${parsed.data.id}`);
     revalidatePath("/admin");
@@ -126,6 +138,11 @@ export async function archiveProductAction(id: string): Promise<ActionResult> {
     }
 
     const archived = await productService.archiveProduct(id, user.id);
+    discoveryService.clearCache();
+    pdpService.clearCache();
+    revalidatePath("/shop");
+    revalidatePath("/category");
+    revalidatePath("/collection");
     revalidatePath("/admin/products");
     revalidatePath(`/admin/products/${id}`);
     revalidatePath("/admin");
