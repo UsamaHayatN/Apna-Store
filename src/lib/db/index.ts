@@ -12,7 +12,25 @@ declare global {
   var _postgresClient: postgres.Sql | undefined;
 }
 
-const connectionString = process.env.DATABASE_URL || "";
+function normalizeSupabaseUrl(rawUrl: string): string {
+  if (!rawUrl) return "";
+  try {
+    const url = new URL(rawUrl);
+    if (url.hostname.includes("hgeckqqwhylkobvmfbja.supabase.co")) {
+      url.hostname = "aws-0-ap-northeast-1.pooler.supabase.com";
+      url.port = "6543";
+      if (url.username === "postgres") {
+        url.username = "postgres.hgeckqqwhylkobvmfbja";
+      }
+      return url.toString();
+    }
+    return rawUrl;
+  } catch {
+    return rawUrl;
+  }
+}
+
+const connectionString = normalizeSupabaseUrl(process.env.DATABASE_URL || "");
 
 let connectionDisabled = false;
 
