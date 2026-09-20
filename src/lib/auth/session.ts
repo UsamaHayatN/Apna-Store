@@ -97,12 +97,26 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     const session = await verifySessionToken(token);
     if (!session) return null;
 
-    // Check JWT payload status directly
+    // Check JWT payload status directly — fast path, no DB hit
     if (session.status === "disabled" || session.status === "suspended") {
       return null;
     }
 
-    // Verify against database or memory repository to enforce real-time status updates
+    // For non-admin/non-staff users, trust the JWT to avoid a DB hit on every page load
+    // Admin/staff still get live verification to enforce real-time role changes
+    if (session.role !== "owner" && session.role !== "admin" && session.role !== "staff") {
+      return {
+        id: session.id,
+        email: session.email,
+        firstName: session.firstName,
+        lastName: session.lastName,
+        role: session.role,
+        status: session.status,
+        emailVerifiedAt: session.emailVerifiedAt,
+      };
+    }
+
+    // Staff/admin: verify against database or memory repository to enforce real-time status updates
     const liveUser = await findUserById(session.id);
     if (liveUser) {
       if (liveUser.status === "disabled" || liveUser.status === "suspended") {

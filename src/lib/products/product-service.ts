@@ -26,6 +26,69 @@ import { variantService } from "./variant-service";
 import { attributeService } from "./attribute-service";
 
 // =============================================================================
+// LOOKUP TABLE CACHE (Categories + Types rarely change — cache for 5 minutes)
+// =============================================================================
+const LOOKUP_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let _catCache: { data: Map<string, Category>; ts: number } | null = null;
+let _typeCache: { data: Map<string, ProductType>; ts: number } | null = null;
+
+async function getCachedCategoryMap(db: ReturnType<typeof getDb>): Promise<Map<string, Category>> {
+  const now = Date.now();
+  if (_catCache && now - _catCache.ts < LOOKUP_CACHE_TTL) return _catCache.data;
+  const rows = await db.select().from(categories);
+  const map = new Map<string, Category>(
+    rows.map((c) => [
+      c.id,
+      {
+        id: c.id,
+        parentId: c.parentId,
+        name: c.name,
+        slug: c.slug,
+        description: c.description,
+        imageUrl: c.imageUrl,
+        imageAlt: c.imageAlt,
+        sortOrder: c.sortOrder,
+        isActive: c.isActive,
+        isFeatured: c.isFeatured,
+        level: c.level,
+        path: c.path,
+        seoTitle: c.seoTitle,
+        seoDescription: c.seoDescription,
+        metadata: c.metadata as Record<string, unknown> || {},
+        deletedAt: c.deletedAt ? c.deletedAt.toISOString() : null,
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+      },
+    ])
+  );
+  _catCache = { data: map, ts: now };
+  return map;
+}
+
+async function getCachedTypeMap(db: ReturnType<typeof getDb>): Promise<Map<string, ProductType>> {
+  const now = Date.now();
+  if (_typeCache && now - _typeCache.ts < LOOKUP_CACHE_TTL) return _typeCache.data;
+  const rows = await db.select().from(productTypes);
+  const map = new Map<string, ProductType>(
+    rows.map((t) => [
+      t.id,
+      {
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
+        description: t.description,
+        hasVariants: t.hasVariants,
+        isShippable: t.isShippable,
+        createdAt: t.createdAt.toISOString(),
+        updatedAt: t.updatedAt.toISOString(),
+      },
+    ])
+  );
+  _typeCache = { data: map, ts: now };
+  return map;
+}
+
+// =============================================================================
 // SEED TAXONOMY & PRODUCTS DATA (For in-memory development & initial DB seeding)
 // =============================================================================
 
@@ -1456,11 +1519,8 @@ export const productService = {
                 .orderBy(asc(productMedia.sortOrder))
             : [];
 
-        const catRows = await db.select().from(categories);
-        const catMap = new Map(catRows.map((c) => [c.id, c]));
-
-        const typeRows = await db.select().from(productTypes);
-        const typeMap = new Map(typeRows.map((t) => [t.id, t]));
+        const catMap = await getCachedCategoryMap(db);
+        const typeMap = await getCachedTypeMap(db);
 
         const data: Product[] = rows.map((r) => {
           const pMedia: ProductMedia[] = mediaRows
@@ -1494,8 +1554,8 @@ export const productService = {
                   description: type.description,
                   hasVariants: type.hasVariants,
                   isShippable: type.isShippable,
-                  createdAt: type.createdAt.toISOString(),
-                  updatedAt: type.updatedAt.toISOString(),
+                  createdAt: type.createdAt,
+                  updatedAt: type.updatedAt,
                 }
               : undefined,
             primaryCategoryId: r.primaryCategoryId,
@@ -1509,7 +1569,7 @@ export const productService = {
                   imageUrl: cat.imageUrl,
                   sortOrder: cat.sortOrder,
                   isActive: cat.isActive,
-                  createdAt: cat.createdAt.toISOString(),
+                  createdAt: cat.createdAt,
                 }
               : undefined,
             primaryCategory: cat
@@ -1522,7 +1582,7 @@ export const productService = {
                   imageUrl: cat.imageUrl,
                   sortOrder: cat.sortOrder,
                   isActive: cat.isActive,
-                  createdAt: cat.createdAt.toISOString(),
+                  createdAt: cat.createdAt,
                 }
               : undefined,
             brand: r.brand,
@@ -1649,6 +1709,115 @@ export const productService = {
       page,
       limit,
       totalPages: Math.ceil(total / limit) || 1,
+    };
+  },
+
+  /**
+   * Optimized single-query fetch for homepage: returns both featured and new arrival
+   * products in one DB query instead of two separate getProducts() calls.
+   * Returns { featured: Product[], newArrivals: Product[] }
+   */
+  async getHomepageProducts(limit: number = 4): Promise<{ featured: Product[]; newArrivals: Product[] }> {
+    if (isDatabaseConfigured()) {
+      try {
+        const db = getDb();
+        const catMap = await getCachedCategoryMap(db);
+        const typeMap = await getCachedTypeMap(db);
+
+        // Single query: active products that are either featured OR new arrivals
+        const rows = await db
+          .select()
+          .from(products)
+          .where(
+            and(
+              or(eq(products.isFeatured, true), eq(products.isNewArrival, true)),
+              eq(products.status, "active"),
+              isNull(products.deletedAt)
+            )
+          )
+          .orderBy(desc(products.createdAt))
+          .limit(limit * 2); // get up to 2x limit to ensure we have enough of each
+
+        // Fetch media for all returned products in one query
+        const productIds = rows.map((r) => r.id);
+        const mediaRows =
+          productIds.length > 0
+            ? await db
+                .select()
+                .from(productMedia)
+                .where(sql`${productMedia.productId} IN ${productIds}`)
+                .orderBy(asc(productMedia.sortOrder))
+            : [];
+
+        const mapped: Product[] = rows.map((r) => {
+          const pMedia = mediaRows
+            .filter((m) => m.productId === r.id)
+            .map((m) => ({
+              id: m.id,
+              productId: m.productId,
+              variantId: m.variantId,
+              url: m.url,
+              storageKey: m.storageKey,
+              altText: m.altText,
+              mimeType: m.mimeType,
+              width: m.width,
+              height: m.height,
+              sortOrder: m.sortOrder,
+              isPrimary: m.isPrimary,
+              createdAt: m.createdAt.toISOString(),
+            }));
+
+          const cat = catMap.get(r.primaryCategoryId);
+          const type = typeMap.get(r.productTypeId);
+
+          return {
+            id: r.id,
+            productTypeId: r.productTypeId,
+            productType: type
+              ? { id: type.id, name: type.name, slug: type.slug, description: type.description, hasVariants: type.hasVariants, isShippable: type.isShippable, createdAt: type.createdAt, updatedAt: type.updatedAt }
+              : undefined,
+            primaryCategoryId: r.primaryCategoryId,
+            category: cat ? { id: cat.id, parentId: cat.parentId, name: cat.name, slug: cat.slug, description: cat.description, imageUrl: cat.imageUrl, sortOrder: cat.sortOrder, isActive: cat.isActive, createdAt: cat.createdAt } : undefined,
+            primaryCategory: cat ? { id: cat.id, parentId: cat.parentId, name: cat.name, slug: cat.slug, description: cat.description, imageUrl: cat.imageUrl, sortOrder: cat.sortOrder, isActive: cat.isActive, createdAt: cat.createdAt } : undefined,
+            brand: r.brand,
+            title: r.title,
+            slug: r.slug,
+            modelCode: r.modelCode,
+            shortDescription: r.shortDescription,
+            description: r.description,
+            basePrice: parseFloat(r.basePrice),
+            compareAtPrice: r.compareAtPrice ? parseFloat(r.compareAtPrice) : null,
+            costPrice: r.costPrice ? parseFloat(r.costPrice) : null,
+            status: r.status as "draft" | "active" | "archived",
+            isFeatured: r.isFeatured,
+            isNewArrival: r.isNewArrival,
+            isOnSale: r.isOnSale,
+            hasVariants: r.hasVariants,
+            seoTitle: r.seoTitle,
+            seoDescription: r.seoDescription,
+            metadata: (r.metadata as Record<string, unknown>) || {},
+            deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
+            createdAt: r.createdAt.toISOString(),
+            updatedAt: r.updatedAt.toISOString(),
+            media: pMedia,
+          };
+        });
+
+        // Split into featured and new arrivals
+        const featured = mapped.filter((p) => p.isFeatured).slice(0, limit);
+        const newArrivals = mapped.filter((p) => p.isNewArrival).slice(0, limit);
+
+        return { featured, newArrivals };
+      } catch (err) {
+        console.warn("ProductService.getHomepageProducts DB query failed:", err);
+      }
+    }
+
+    // In-memory fallback
+    const all = INITIAL_PRODUCTS.filter((p) => p.status === "active");
+    return {
+      featured: all.filter((p) => p.isFeatured).slice(0, limit),
+      newArrivals: all.filter((p) => p.isNewArrival).slice(0, limit),
     };
   },
 

@@ -113,10 +113,18 @@ export function toStorefrontProduct(product: Product): StorefrontProduct {
 }
 
 class StorefrontService {
+  // Cache for featured categories (avoids 3 DB queries per call)
+  private _featuredCategoriesCache: { data: StorefrontCategory[]; ts: number } | null = null;
+
   /**
    * Retrieves active, featured, and prominent footwear categories for storefront display.
    */
   async getFeaturedCategories(limit: number = 4): Promise<StorefrontCategory[]> {
+    const now = Date.now();
+    if (this._featuredCategoriesCache && now - this._featuredCategoriesCache.ts < 60_000) {
+      return this._featuredCategoriesCache.data;
+    }
+
     try {
       const allCategories = await categoryService.listCategories({
         includeInactive: false,
@@ -139,7 +147,7 @@ class StorefrontService {
 
       const chosen = (relevant.length > 0 ? relevant : allCategories).slice(0, limit);
 
-      return chosen.map((c) => ({
+      const result = chosen.map((c) => ({
         id: c.id,
         name: c.name,
         slug: c.slug,
@@ -149,6 +157,9 @@ class StorefrontService {
         productCount: c.activeProductCount || c.productCount || 0,
         path: c.path || `/category/${c.slug}`,
       }));
+
+      this._featuredCategoriesCache = { data: result, ts: Date.now() };
+      return result;
     } catch (err) {
       console.error("StorefrontService.getFeaturedCategories failed:", err);
       return [];
@@ -171,12 +182,12 @@ class StorefrontService {
       const items = res.data || res.items || [];
       let mapped = items.map(toStorefrontProduct);
 
-      // If fewer than requested limit, fill with general active products
+      // If fewer than requested, fill with general active products in a single query
       if (mapped.length < limit) {
         const fallbackRes = await productService.getProducts({
           status: "active",
           page: 1,
-          limit,
+          limit: limit - mapped.length + 2, // Fetch only what we need
           sort: "newest",
         });
         const fallbackItems = fallbackRes.data || fallbackRes.items || [];
@@ -218,7 +229,7 @@ class StorefrontService {
         const fallbackRes = await productService.getProducts({
           status: "active",
           page: 1,
-          limit: limit + 2,
+          limit: limit - mapped.length + 2, // Fetch only what we need
           sort: "newest",
         });
         const fallbackItems = fallbackRes.data || fallbackRes.items || [];
@@ -245,53 +256,54 @@ class StorefrontService {
    */
   async getFeaturedCollection(): Promise<StorefrontCollectionWithProducts | null> {
     try {
-      const collectionsRes = await collectionService.listCollections({
-        status: "published",
-        isFeatured: true,
-        limit: 1,
-      });
+      // Try featured first, then fall back to any published — do both in parallel
+      const [featuredRes, anyRes] = await Promise.all([
+        collectionService.listCollections({ status: "published", isFeatured: true, limit: 1 }),
+        collectionService.listCollections({ status: "published", limit: 1 }),
+      ]);
 
-      const collection = (collectionsRes.data || collectionsRes.items || [])[0];
-      if (!collection) {
-        // Try any published collection as fallback
-        const anyPublished = await collectionService.listCollections({
-          status: "published",
-          limit: 1,
-        });
-        const fallbackCol = (anyPublished.data || anyPublished.items || [])[0];
-        if (!fallbackCol) return null;
+      const collection =
+        (featuredRes.data || featuredRes.items || [])[0] ||
+        (anyRes.data || anyRes.items || [])[0];
 
-        const assignedItems = await collectionService.getCollectionProducts(fallbackCol.id);
-        const products: StorefrontProduct[] = [];
-        for (const item of assignedItems.slice(0, 4)) {
-          if (item.product && item.product.status === "active") {
-            const fullProd = await productService.getProductById(item.productId);
-            if (fullProd && fullProd.status === "active") {
-              products.push(toStorefrontProduct(fullProd));
-            }
-          }
-        }
-
-        return {
-          id: fallbackCol.id,
-          title: fallbackCol.title,
-          slug: fallbackCol.slug,
-          description: fallbackCol.description,
-          imageUrl: fallbackCol.imageUrl,
-          imageAlt: fallbackCol.imageAlt,
-          productCount: fallbackCol.productCount,
-          products,
-        };
-      }
+      if (!collection) return null;
 
       const assignedItems = await collectionService.getCollectionProducts(collection.id);
+
+      // Use the product data already returned by getCollectionProducts()
+      // instead of re-fetching each product by ID (avoids N+1 queries)
       const products: StorefrontProduct[] = [];
       for (const item of assignedItems.slice(0, 4)) {
         if (item.product && item.product.status === "active") {
-          const fullProd = await productService.getProductById(item.productId);
-          if (fullProd && fullProd.status === "active") {
-            products.push(toStorefrontProduct(fullProd));
-          }
+          products.push({
+            id: item.product.id,
+            title: item.product.title,
+            slug: item.product.slug,
+            brand: item.product.brand || siteConfig.brandName,
+            modelCode: null,
+            shortDescription: null,
+            description: "",
+            basePrice: item.product.basePrice,
+            compareAtPrice: null,
+            status: "active" as const,
+            isFeatured: false,
+            isNewArrival: false,
+            isOnSale: false,
+            primaryCategory: item.product.primaryCategoryName
+              ? { id: "", name: item.product.primaryCategoryName, slug: "" }
+              : null,
+            media: item.product.thumbnailUrl
+              ? [{
+                  id: "",
+                  url: item.product.thumbnailUrl,
+                  altText: item.product.title,
+                  isPrimary: true,
+                  sortOrder: 0,
+                }]
+              : [],
+            variantCount: 0,
+            hasVariants: true,
+          });
         }
       }
 
@@ -316,10 +328,12 @@ class StorefrontService {
    */
   clearCache(): void {
     homepageCache = null;
+    this._featuredCategoriesCache = null;
   }
 
   /**
    * Aggregates all homepage datasets concurrently with server-side caching / performance.
+   * Includes a safety timeout to prevent Vercel function hangs.
    */
   async getHomepageData(): Promise<HomepageData> {
     const now = Date.now();
@@ -327,27 +341,46 @@ class StorefrontService {
       return homepageCache.data;
     }
 
-    const [featuredCategories, featuredProducts, newArrivals, featuredCollection] =
-      await Promise.all([
+    const emptyData: HomepageData = {
+      featuredCategories: [],
+      featuredProducts: [],
+      newArrivals: [],
+      featuredCollection: null,
+    };
+
+    try {
+      // Race the data fetch against a 12-second timeout (Vercel hobby plan: 10s, Pro: 60s)
+      const dataPromise = Promise.all([
         this.getFeaturedCategories(4),
-        this.getFeaturedProducts(4),
-        this.getNewArrivals(4),
+        productService.getHomepageProducts(4), // Single query for both featured + arrivals
         this.getFeaturedCollection(),
       ]);
 
-    const data: HomepageData = {
-      featuredCategories,
-      featuredProducts,
-      newArrivals,
-      featuredCollection,
-    };
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Homepage data fetch timed out")), 12000)
+      );
 
-    homepageCache = { timestamp: now, data };
-    return data;
+      const [featuredCategories, homepageProducts, featuredCollection] =
+        await Promise.race([dataPromise, timeoutPromise]);
+
+      const data: HomepageData = {
+        featuredCategories,
+        featuredProducts: homepageProducts.featured.map(toStorefrontProduct),
+        newArrivals: homepageProducts.newArrivals.map(toStorefrontProduct),
+        featuredCollection,
+      };
+
+      homepageCache = { timestamp: now, data };
+      return data;
+    } catch (err) {
+      console.error("StorefrontService.getHomepageData failed, returning empty data:", err);
+      // Return empty data so the page still renders (with fallback UI)
+      return emptyData;
+    }
   }
 }
 
 let homepageCache: { timestamp: number; data: HomepageData } | null = null;
-const HOMEPAGE_CACHE_TTL = 15_000;
+const HOMEPAGE_CACHE_TTL = 60_000; // 60 seconds — reduces DB load on Vercel serverless
 
 export const storefrontService = new StorefrontService();

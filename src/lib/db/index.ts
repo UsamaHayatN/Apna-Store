@@ -16,11 +16,16 @@ function normalizeSupabaseUrl(rawUrl: string): string {
   if (!rawUrl) return "";
   try {
     const url = new URL(rawUrl);
-    if (url.hostname.includes("hgeckqqwhylkobvmfbja.supabase.co")) {
-      url.hostname = "aws-0-ap-northeast-1.pooler.supabase.com";
+    // Normalize any Supabase direct connection URL to use the connection pooler
+    // This is required for serverless environments (Vercel, Netlify, etc.)
+    // to prevent connection pool exhaustion
+    if (url.hostname.includes(".supabase.co") && !url.hostname.includes("pooler")) {
+      // Extract project ref from hostname (e.g., "xyzproject.supabase.co" -> "xyzproject")
+      const projectRef = url.hostname.split(".")[0];
+      url.hostname = `aws-0-ap-northeast-1.pooler.supabase.com`;
       url.port = "6543";
       if (url.username === "postgres") {
-        url.username = "postgres.hgeckqqwhylkobvmfbja";
+        url.username = `postgres.${projectRef}`;
       }
       return url.toString();
     }
@@ -82,7 +87,11 @@ export async function safeDbQuery<T>(
       msg.includes("ETIMEDOUT") ||
       msg.includes("CONNECT_TIMEOUT") ||
       msg.includes("ENOTFOUND") ||
-      msg.includes("EHOSTUNREACH")
+      msg.includes("EHOSTUNREACH") ||
+      msg.includes("SELF_SIGNED_CERT_IN_CHAIN") ||
+      msg.includes("UNABLE_TO_VERIFY_LEAF_SIGNATURE") ||
+      msg.includes("unable to get local issuer certificate") ||
+      msg.includes("certificate has expired")
     ) {
       markDatabaseConnectionFailed(err);
     }
@@ -94,14 +103,22 @@ export async function safeDbQuery<T>(
 let client: postgres.Sql | null = null;
 let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
-if (isDatabaseConfigured()) {
+/**
+ * Lazily initialize the database connection.
+ * On Vercel serverless, connecting at module-load time can cause cold start hangs.
+ * We defer the connection until the first actual query.
+ */
+function initializeDatabase(): void {
+  if (dbInstance) return;
+  if (!isDatabaseConfigured()) return;
+
   try {
     const isProd = process.env.NODE_ENV === "production";
     const clientOptions: postgres.Options<{}> = {
       max: isProd ? 1 : 5, // max 1 for serverless/Vercel functions to prevent pool exhaustion
       idle_timeout: 10,
-      connect_timeout: 3, // 3s fast fail-safe: never hang serverless requests
-      ssl: "require",
+      connect_timeout: 10, // 10s for Vercel cold starts (Supabase pooler can be slow)
+      ssl: isProd ? "require" : { rejectUnauthorized: false }, // Dev: skip SSL cert verification to avoid local errors
       prepare: false, // Required for Supabase transaction/session poolers
     };
 
@@ -116,6 +133,7 @@ if (isDatabaseConfigured()) {
     dbInstance = drizzle(client, { schema });
   } catch (error) {
     console.warn("Failed to initialize PostgreSQL connection client:", error);
+    markDatabaseConnectionFailed(error);
   }
 }
 
@@ -124,6 +142,9 @@ if (isDatabaseConfigured()) {
  * indicating that DATABASE_URL needs to be configured in settings.
  */
 export function getDb() {
+  if (!dbInstance) {
+    initializeDatabase();
+  }
   if (!dbInstance) {
     throw new Error(
       "Database is not configured. Please set a valid DATABASE_URL in your environment variables to perform this operation."

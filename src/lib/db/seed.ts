@@ -30,7 +30,7 @@ async function seed() {
     return;
   }
 
-  const client = postgres(connectionString, { max: 1, prepare: false, ssl: "require" });
+  const client = postgres(connectionString, { max: 1, prepare: false, ssl: { rejectUnauthorized: false } });
   const db = drizzle(client, { schema });
 
   try {
