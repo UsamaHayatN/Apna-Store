@@ -44,19 +44,54 @@ export function markDatabaseConnectionFailed(reason?: unknown): void {
   console.warn("Disabling direct PostgreSQL connection fallback to in-memory store due to connection failure:", reason);
 }
 
+/**
+ * Executes a database query with automatic connection failure detection and immediate fallback.
+ */
+export async function safeDbQuery<T>(
+  queryFn: (db: ReturnType<typeof drizzle<typeof schema>>) => Promise<T>,
+  fallback: () => Promise<T> | T
+): Promise<T> {
+  if (!isDatabaseConfigured()) {
+    return fallback();
+  }
+  try {
+    const db = getDb();
+    return await queryFn(db);
+  } catch (err: unknown) {
+    const msg = String(err);
+    if (
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ETIMEDOUT") ||
+      msg.includes("CONNECT_TIMEOUT") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("EHOSTUNREACH")
+    ) {
+      markDatabaseConnectionFailed(err);
+    }
+    console.warn("DB query failed, smoothly falling back:", err);
+    return fallback();
+  }
+}
+
 let client: postgres.Sql | null = null;
 let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
 if (isDatabaseConfigured()) {
   try {
-    if (process.env.NODE_ENV === "production") {
-      client = postgres(connectionString, { max: 10, idle_timeout: 20 });
+    const isProd = process.env.NODE_ENV === "production";
+    const clientOptions: postgres.Options<{}> = {
+      max: isProd ? 1 : 5, // max 1 for serverless/Vercel functions to prevent pool exhaustion
+      idle_timeout: 10,
+      connect_timeout: 3, // 3s fast fail-safe: never hang serverless requests
+      ssl: "require",
+      prepare: false, // Required for Supabase transaction/session poolers
+    };
+
+    if (isProd) {
+      client = postgres(connectionString, clientOptions);
     } else {
       if (!global._postgresClient) {
-        global._postgresClient = postgres(connectionString, {
-          max: 5,
-          idle_timeout: 20,
-        });
+        global._postgresClient = postgres(connectionString, clientOptions);
       }
       client = global._postgresClient;
     }

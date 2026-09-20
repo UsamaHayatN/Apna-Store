@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
 import { ClientErrorSuppressor } from "@/components/common/ClientErrorSuppressor";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: {
@@ -36,6 +37,7 @@ export default function RootLayout({
       >
         <ClientErrorSuppressor />
         {children}
+        <Analytics />
       </body>
     </html>
   );
