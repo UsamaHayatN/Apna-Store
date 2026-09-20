@@ -26,15 +26,55 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(storefront)/layout.js"
     ],
+    "/(storefront)/error": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(storefront)/error.js"
+    ],
+    "/(storefront)/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(storefront)/loading.js"
+    ],
+    "/(storefront)/category/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(storefront)/category/loading.js"
+    ],
+    "/(storefront)/category/[slug]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(storefront)/category/[slug]/page.js"
+    ],
+    "/(storefront)/shop/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(storefront)/shop/loading.js"
+    ],
+    "/(storefront)/shop/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(storefront)/shop/page.js"
+    ],
     "/(storefront)/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(storefront)/page.js"
     ],
-    "/_not-found/page": [
+    "/(storefront)/collections/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/(storefront)/collections/loading.js"
+    ],
+    "/(storefront)/collections/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(storefront)/collections/page.js"
+    ],
+    "/(storefront)/contact/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(storefront)/contact/page.js"
     ]
   }
 }

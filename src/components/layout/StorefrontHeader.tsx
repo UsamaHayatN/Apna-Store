@@ -1,10 +1,16 @@
-import { getSessionUser } from "@/lib/auth/session";
+import { Suspense } from "react";
 import { AnnouncementBar } from "@/components/storefront/AnnouncementBar";
 import { StorefrontHeaderBar } from "./StorefrontHeaderBar";
+import { StorefrontHeaderSession } from "./StorefrontHeaderSession";
 
-export async function StorefrontHeader() {
-  const user = await getSessionUser();
-
+/**
+ * StorefrontHeader:
+ * Split into a static shell + async session loader wrapped in Suspense.
+ * This prevents getSessionUser() (which calls cookies() + JWT verify + potential DB lookup)
+ * from blocking page navigation. The page content renders immediately while
+ * the session state hydrates asynchronously.
+ */
+export function StorefrontHeader() {
   return (
     <header
       id="storefront-global-header"
@@ -13,8 +19,10 @@ export async function StorefrontHeader() {
       {/* Configurable Dismissible Promotional Announcement Bar */}
       <AnnouncementBar />
 
-      {/* Main Responsive Header Navigation Bar with Mobile Drawer */}
-      <StorefrontHeaderBar user={user} cartCount={0} />
+      {/* Session-aware header bar: loads user state asynchronously without blocking navigation */}
+      <Suspense fallback={<StorefrontHeaderBar user={null} cartCount={0} />}>
+        <StorefrontHeaderSession />
+      </Suspense>
     </header>
   );
 }

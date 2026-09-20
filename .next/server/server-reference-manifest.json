@@ -2,57 +2,157 @@
   "node": {
     "001a16c9f8da2461558a5e2a7732d3d01e37ca9107": {
       "workers": {
+        "app/(storefront)/category/[slug]/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/shop/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
         "app/(storefront)/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/collections/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/contact/page": {
           "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
           "async": false
         }
       },
       "layer": {
-        "app/(storefront)/page": "action-browser"
+        "app/(storefront)/category/[slug]/page": "action-browser",
+        "app/(storefront)/shop/page": "action-browser",
+        "app/(storefront)/page": "action-browser",
+        "app/(storefront)/collections/page": "action-browser",
+        "app/(storefront)/contact/page": "action-browser"
       }
     },
     "005e4719e6f939065304873cfc8873b5fe38eebfe5": {
       "workers": {
+        "app/(storefront)/category/[slug]/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/shop/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
         "app/(storefront)/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/collections/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/contact/page": {
           "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
           "async": false
         }
       },
       "layer": {
-        "app/(storefront)/page": "action-browser"
+        "app/(storefront)/category/[slug]/page": "action-browser",
+        "app/(storefront)/shop/page": "action-browser",
+        "app/(storefront)/page": "action-browser",
+        "app/(storefront)/collections/page": "action-browser",
+        "app/(storefront)/contact/page": "action-browser"
       }
     },
     "40e53c5635f0b70de7258bd37a30908dbb65e41a80": {
       "workers": {
+        "app/(storefront)/category/[slug]/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/shop/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
         "app/(storefront)/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/collections/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/contact/page": {
           "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
           "async": false
         }
       },
       "layer": {
-        "app/(storefront)/page": "action-browser"
+        "app/(storefront)/category/[slug]/page": "action-browser",
+        "app/(storefront)/shop/page": "action-browser",
+        "app/(storefront)/page": "action-browser",
+        "app/(storefront)/collections/page": "action-browser",
+        "app/(storefront)/contact/page": "action-browser"
       }
     },
     "6039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba": {
       "workers": {
+        "app/(storefront)/category/[slug]/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/shop/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
         "app/(storefront)/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/collections/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/contact/page": {
           "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
           "async": false
         }
       },
       "layer": {
-        "app/(storefront)/page": "action-browser"
+        "app/(storefront)/category/[slug]/page": "action-browser",
+        "app/(storefront)/shop/page": "action-browser",
+        "app/(storefront)/page": "action-browser",
+        "app/(storefront)/collections/page": "action-browser",
+        "app/(storefront)/contact/page": "action-browser"
       }
     },
     "60d2008f0c2255fbdafa3ab62e92123fc74c4bfd74": {
       "workers": {
+        "app/(storefront)/category/[slug]/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/shop/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
         "app/(storefront)/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/collections/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(storefront)/contact/page": {
           "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22E%3A%5C%5CIntikhaab%5C%5Csrc%5C%5Capp%5C%5Cactions%5C%5Cwishlist.ts%22%2C%5B%7B%22id%22%3A%22001a16c9f8da2461558a5e2a7732d3d01e37ca9107%22%2C%22exportedName%22%3A%22getUserWishlistAction%22%7D%2C%7B%22id%22%3A%22005e4719e6f939065304873cfc8873b5fe38eebfe5%22%2C%22exportedName%22%3A%22getWishlistProductIdsAction%22%7D%2C%7B%22id%22%3A%2240e53c5635f0b70de7258bd37a30908dbb65e41a80%22%2C%22exportedName%22%3A%22removeFromWishlistAction%22%7D%2C%7B%22id%22%3A%226039a4363a2cf7dbefa4d84e4c8d2153db00fcf3ba%22%2C%22exportedName%22%3A%22toggleWishlistAction%22%7D%2C%7B%22id%22%3A%2260d2008f0c2255fbdafa3ab62e92123fc74c4bfd74%22%2C%22exportedName%22%3A%22moveWishlistToCartAction%22%7D%5D%5D%5D&__client_imported__=true!",
           "async": false
         }
       },
       "layer": {
-        "app/(storefront)/page": "action-browser"
+        "app/(storefront)/category/[slug]/page": "action-browser",
+        "app/(storefront)/shop/page": "action-browser",
+        "app/(storefront)/page": "action-browser",
+        "app/(storefront)/collections/page": "action-browser",
+        "app/(storefront)/contact/page": "action-browser"
       }
     }
   },

@@ -11,6 +11,7 @@ import {
   variantAttributeValues as variantAttributeValuesTable,
   attributeValues as attributeValuesTable,
   attributes as attributesTable,
+  productMedia,
 } from "@/lib/db/schema";
 import { productService } from "@/lib/products/product-service";
 import { categoryService } from "@/lib/categories/category-service";
@@ -253,7 +254,13 @@ export class DiscoveryService {
     let result: DiscoveryResult;
     if (isDatabaseConfigured()) {
       try {
-        result = await this.searchAndFilterPostgres(params);
+        // Timeout safety: if DB queries take > 12s, fall back to memory instead of hanging
+        result = await Promise.race([
+          this.searchAndFilterPostgres(params),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Discovery DB query timed out (12s)")), 12_000)
+          ),
+        ]);
       } catch (err) {
         console.warn("PostgreSQL discovery search failed, falling back to memory:", err);
         result = await this.searchAndFilterMemory(params);
@@ -547,14 +554,15 @@ export class DiscoveryService {
 
     // Category filter
     if (params.category) {
+      // Avoid UUID comparison for slug strings — only compare with slug column
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.category);
       const [cat] = await db
         .select()
         .from(categoriesTable)
         .where(
-          or(
-            eq(categoriesTable.slug, params.category),
-            eq(categoriesTable.id, params.category)
-          )
+          isUuid
+            ? or(eq(categoriesTable.slug, params.category), eq(categoriesTable.id, params.category))!
+            : eq(categoriesTable.slug, params.category)
         )
         .limit(1);
 
@@ -572,14 +580,14 @@ export class DiscoveryService {
 
     // Collection filter
     if (params.collection) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.collection);
       const [col] = await db
         .select()
         .from(collectionsTable)
         .where(
-          or(
-            eq(collectionsTable.slug, params.collection),
-            eq(collectionsTable.id, params.collection)
-          )
+          isUuid
+            ? or(eq(collectionsTable.slug, params.collection), eq(collectionsTable.id, params.collection))!
+            : eq(collectionsTable.slug, params.collection)
         )
         .limit(1);
 
@@ -681,7 +689,7 @@ export class DiscoveryService {
         break;
     }
 
-    // Query Products
+    // Query paginated products with media in a single batch (no N+1)
     const offset = (page - 1) * limit;
     const dbProducts = await db
       .select()
@@ -691,23 +699,95 @@ export class DiscoveryService {
       .limit(limit)
       .offset(offset);
 
-    // Map to Product and StorefrontProduct
-    const storefrontProducts: StorefrontProduct[] = [];
-    for (const p of dbProducts) {
-      const fullProduct = await productService.getProductById(p.id);
-      if (fullProduct) {
-        storefrontProducts.push(toStorefrontProduct(fullProduct));
+    const productIds = dbProducts.map((p) => p.id);
+
+    // Batch-fetch media for ALL paginated products in ONE query (eliminates N+1)
+    let mediaByProductId = new Map<string, Array<{ id: string; url: string; altText: string | null; isPrimary: boolean; sortOrder: number }>>();
+    if (productIds.length > 0) {
+      const allMedia = await db
+        .select()
+        .from(productMedia)
+        .where(inArray(productMedia.productId, productIds))
+        .orderBy(asc(productMedia.sortOrder));
+
+      for (const m of allMedia) {
+        if (!mediaByProductId.has(m.productId)) {
+          mediaByProductId.set(m.productId, []);
+        }
+        mediaByProductId.get(m.productId)!.push({
+          id: m.id,
+          url: m.url,
+          altText: m.altText,
+          isPrimary: Boolean(m.isPrimary),
+          sortOrder: m.sortOrder ?? 0,
+        });
       }
     }
 
-    // Get Memory facets as reliable fallback
-    const allProducts = await productService.getProducts({ status: "active", limit: 1000 });
-    const allVariants: ProductVariant[] = [];
-    for (const p of allProducts.data) {
-      const v = await variantService.listVariantsByProductId(p.id);
-      allVariants.push(...v);
+    // Batch-fetch variant counts for display (single query)
+    let variantCountMap = new Map<string, number>();
+    if (productIds.length > 0) {
+      const variantCounts = await db
+        .select({
+          productId: variantsTable.productId,
+          count: sql<number>`count(*)`,
+        })
+        .from(variantsTable)
+        .where(inArray(variantsTable.productId, productIds))
+        .groupBy(variantsTable.productId);
+      for (const vc of variantCounts) {
+        variantCountMap.set(vc.productId, Number(vc.count));
+      }
     }
-    const facets = await this.calculateFacetsMemory(allProducts.data, allVariants, params);
+
+    // Batch-fetch category lookups for display (single query)
+    const categoryIds = dbProducts.map((p) => p.primaryCategoryId).filter(Boolean) as string[];
+    let categoryMap = new Map<string, { id: string; name: string; slug: string }>();
+    if (categoryIds.length > 0) {
+      const uniqueCatIds = Array.from(new Set(categoryIds));
+      const cats = await db
+        .select({ id: categoriesTable.id, name: categoriesTable.name, slug: categoriesTable.slug })
+        .from(categoriesTable)
+        .where(inArray(categoriesTable.id, uniqueCatIds));
+      for (const c of cats) {
+        categoryMap.set(c.id, c);
+      }
+    }
+
+    // Map directly from DB rows — no individual product fetch
+    const storefrontProducts: StorefrontProduct[] = dbProducts.map((p) => {
+      const media = (mediaByProductId.get(p.id) || []).map((m) => ({
+        id: m.id,
+        url: m.url,
+        altText: m.altText || p.title,
+        isPrimary: m.isPrimary,
+        sortOrder: m.sortOrder,
+      }));
+      const cat = p.primaryCategoryId ? categoryMap.get(p.primaryCategoryId) : null;
+
+      return {
+        id: p.id,
+        title: p.title,
+        slug: p.slug,
+        brand: p.brand || "Atelier",
+        modelCode: p.modelCode || null,
+        shortDescription: p.shortDescription || null,
+        description: p.description || "",
+        basePrice: Number(p.basePrice) || 0,
+        compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null,
+        status: "active" as const,
+        isFeatured: Boolean(p.isFeatured),
+        isNewArrival: Boolean(p.isNewArrival),
+        isOnSale: Boolean(p.isOnSale || (p.compareAtPrice && Number(p.compareAtPrice) > Number(p.basePrice))),
+        primaryCategory: cat || null,
+        media,
+        variantCount: variantCountMap.get(p.id) || 0,
+        hasVariants: Boolean(p.hasVariants),
+      };
+    });
+
+    // Build facets using a lightweight DB aggregate query instead of loading everything
+    const facets = await this.calculateFacetsPostgres(db, conditions, params);
     const activeChips = this.generateActiveChips(params, facets);
 
     return {
@@ -721,6 +801,166 @@ export class DiscoveryService {
       facets,
       activeChips,
       currentQuery: params,
+    };
+  }
+
+  /**
+   * Efficient PostgreSQL-native facet calculation using aggregate queries
+   * instead of loading ALL products and variants into memory.
+   */
+  private async calculateFacetsPostgres(
+    db: ReturnType<typeof getDb>,
+    baseConditions: ReturnType<typeof and>[],
+    params: DiscoveryQueryParams
+  ): Promise<DiscoveryFacets> {
+    // Run 3 queries in parallel: categories, category counts, and aggregates
+    const [allCategories, categoryCounts, aggregates, inStockProducts] = await Promise.all([
+      categoryService.listCategories({ includeInactive: false }),
+      db
+        .select({
+          categoryId: productsTable.primaryCategoryId,
+          count: sql<number>`count(*)`,
+        })
+        .from(productsTable)
+        .where(and(eq(productsTable.status, "active"), isNull(productsTable.deletedAt)))
+        .groupBy(productsTable.primaryCategoryId),
+      // Combined aggregate: price range + quick counts in one query
+      db
+        .select({
+          minPrice: sql<number>`coalesce(min(${productsTable.basePrice}), 0)`,
+          maxPrice: sql<number>`coalesce(max(${productsTable.basePrice}), 1000)`,
+          totalCount: sql<number>`count(*)`,
+          onSaleCount: sql<number>`count(*) filter (where ${productsTable.isOnSale} = true or ${productsTable.compareAtPrice} > ${productsTable.basePrice})`,
+          newArrivalCount: sql<number>`count(*) filter (where ${productsTable.isNewArrival} = true)`,
+          featuredCount: sql<number>`count(*) filter (where ${productsTable.isFeatured} = true)`,
+        })
+        .from(productsTable)
+        .where(and(eq(productsTable.status, "active"), isNull(productsTable.deletedAt)))
+        .then(([row]) => row),
+      // In stock count
+      db
+        .selectDistinct({ productId: variantsTable.productId })
+        .from(variantsTable)
+        .innerJoin(inventoryTable, eq(variantsTable.id, inventoryTable.variantId))
+        .where(
+          and(
+            eq(variantsTable.isActive, true),
+            sql`(${inventoryTable.stockQuantity} - ${inventoryTable.reservedQuantity}) > 0`
+          )
+        ),
+    ]);
+
+    const catCountMap = new Map<string, number>();
+    for (const row of categoryCounts) {
+      if (row.categoryId) catCountMap.set(row.categoryId, Number(row.count));
+    }
+
+    const categoriesFacet: DiscoveryFacetCategory[] = allCategories
+      .filter((c) => (catCountMap.get(c.id) || 0) > 0 || c.parentId === null)
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        count: catCountMap.get(c.id) || 0,
+        selected: params.category === c.slug || params.category === c.id,
+      }));
+
+    const inStockCount = inStockProducts.length;
+
+    // Generic Attributes facet — run all attribute queries in PARALLEL
+    const systemAttributes = await attributeService.listAttributes();
+
+    const attributeFacetResults = await Promise.all(
+      systemAttributes.map(async (attr) => {
+        const code = attr.code.toLowerCase();
+
+        // Get attribute values with counts from DB directly
+        const valueCounts = await db
+          .select({
+            value: sql<string>`lower(${attributeValuesTable.value})`,
+            count: sql<number>`count(distinct ${variantsTable.productId})`,
+          })
+          .from(variantsTable)
+          .innerJoin(variantAttributeValuesTable, eq(variantsTable.id, variantAttributeValuesTable.variantId))
+          .innerJoin(attributesTable, eq(variantAttributeValuesTable.attributeId, attributesTable.id))
+          .innerJoin(attributeValuesTable, eq(variantAttributeValuesTable.attributeValueId, attributeValuesTable.id))
+          .where(and(
+            eq(attributesTable.code, code),
+            eq(variantsTable.isActive, true)
+          ))
+          .groupBy(attributeValuesTable.value);
+
+        const valueCountMap = new Map<string, number>();
+        for (const vc of valueCounts) {
+          valueCountMap.set(vc.value, Number(vc.count));
+        }
+
+        const facetValues: DiscoveryFacetValue[] = [];
+        const seenVals = new Set<string>();
+
+        // Use seeded values if available
+        if (attr.values && attr.values.length > 0) {
+          for (const av of attr.values) {
+            const valLower = av.value.toLowerCase().trim();
+            seenVals.add(valLower);
+            const count = valueCountMap.get(valLower) || 0;
+            if (count > 0 || params.attributes?.[code]?.includes(valLower)) {
+              facetValues.push({
+                value: av.value,
+                label: av.label || av.value,
+                colorHex: av.colorHex,
+                count,
+                selected: params.attributes?.[code]?.includes(valLower) ?? false,
+              });
+            }
+          }
+        }
+
+        // Add discovered values not in definition
+        for (const [val, count] of valueCountMap.entries()) {
+          if (!seenVals.has(val) && count > 0) {
+            facetValues.push({
+              value: val,
+              label: val.charAt(0).toUpperCase() + val.slice(1),
+              count,
+              selected: params.attributes?.[code]?.includes(val) ?? false,
+            });
+          }
+        }
+
+        if (facetValues.length > 0) {
+          return {
+            code: attr.code,
+            name: attr.name,
+            type: attr.type,
+            values: facetValues.sort((a, b) => {
+              const numA = parseFloat(a.value);
+              const numB = parseFloat(b.value);
+              if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+              return a.label.localeCompare(b.label);
+            }),
+          } as DiscoveryFacetAttribute;
+        }
+        return null;
+      })
+    );
+
+    const attributesFacet = attributeFacetResults.filter(Boolean) as DiscoveryFacetAttribute[];
+
+    return {
+      categories: categoriesFacet,
+      attributes: attributesFacet,
+      priceRange: {
+        min: Math.floor(Number(aggregates?.minPrice ?? 0)),
+        max: Math.ceil(Number(aggregates?.maxPrice ?? 1000)),
+      },
+      quickCounts: {
+        inStock: inStockCount,
+        onSale: Number(aggregates?.onSaleCount ?? 0),
+        newArrival: Number(aggregates?.newArrivalCount ?? 0),
+        featured: Number(aggregates?.featuredCount ?? 0),
+      },
+      totalCount: Number(aggregates?.totalCount ?? 0),
     };
   }
 

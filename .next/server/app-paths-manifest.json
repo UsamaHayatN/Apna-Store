@@ -1,4 +1,7 @@
 {
-  "/api/cart/route": "app/api/cart/route.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/(s
+  "/(storefront)/category/[slug]/page": "app/(storefront)/category/[slug]/page.js",
+  "/(storefront)/page": "app/(storefront)/page.js",
+  "/(storefront)/contact/page": "app/(storefront)/contact/page.js",
+  "/(storefront)/collections/page": "app/(storefront)/collections/page.js",
+  "/(storefront)/shop/page": "app/(storefront)/shop/page.js"
+}
