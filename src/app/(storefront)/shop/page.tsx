@@ -5,6 +5,9 @@ import { discoveryService } from "@/lib/storefront/discovery-service";
 import { ProductListingView } from "@/components/storefront/ProductListingView";
 import { siteConfig } from "@/config/site";
 
+// ISR: Revalidate every 120 seconds for shop page
+export const revalidate = 120;
+
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `Shop All Collections | ${siteConfig.name}`,

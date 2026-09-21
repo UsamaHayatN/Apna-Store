@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { toggleWishlistAction, removeFromWishlistAction, getWishlistProductIdsAction } from "@/app/actions/wishlist";
 
@@ -21,24 +21,25 @@ const WishlistContext = createContext<WishlistContextType | undefined>(undefined
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start false — lazy fetch
+  const hasFetchedRef = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
 
   const refreshWishlist = useCallback(async () => {
+    setIsLoading(true);
     try {
       const ids = await getWishlistProductIdsAction();
       setWishlistIds(new Set(ids));
     } catch (err) {
       console.warn("Could not refresh wishlist:", err);
     } finally {
+      hasFetchedRef.current = true;
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    refreshWishlist();
-  }, [refreshWishlist]);
+  // NO useEffect — wishlist is fetched lazily when needed.
 
   const isWishlisted = useCallback(
     (productId: string) => {
@@ -49,6 +50,11 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const toggleWishlist = useCallback(
     async (productId: string, variantId?: string | null) => {
+      // Lazy-fetch wishlist if not yet fetched
+      if (!hasFetchedRef.current) {
+        await refreshWishlist();
+      }
+
       // Optimistic update
       const wasWishlisted = wishlistIds.has(productId);
       const nextSet = new Set(wishlistIds);
@@ -89,7 +95,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: "Failed to update wishlist." };
       }
     },
-    [wishlistIds, pathname, router]
+    [wishlistIds, pathname, router, refreshWishlist]
   );
 
   const removeFromWishlist = useCallback(

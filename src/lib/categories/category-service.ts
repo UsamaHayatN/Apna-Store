@@ -53,6 +53,7 @@ export class CategoryService {
 
   /**
    * Flat listing of categories with computed product counts and children counts.
+   * Optimized: computes children counts from the same result set (avoids extra DB query).
    */
   async listCategories(options: ListCategoriesOptions = {}): Promise<Category[]> {
     const {
@@ -96,15 +97,14 @@ export class CategoryService {
           .where(conditions.length > 0 ? and(...conditions) : undefined)
           .orderBy(asc(categories.level), asc(categories.sortOrder), asc(categories.name));
 
-        // Get product counts
+        // Get product counts (single query)
         const productCounts = await this.getProductCountsMap();
 
-        // Get children counts
+        // Compute children counts FROM the same rows — no extra DB query
         const childrenCountMap = new Map<string, number>();
-        const allCats = await db.select({ id: categories.id, parentId: categories.parentId }).from(categories).where(isNull(categories.deletedAt));
-        for (const c of allCats) {
-          if (c.parentId) {
-            childrenCountMap.set(c.parentId, (childrenCountMap.get(c.parentId) || 0) + 1);
+        for (const r of rows) {
+          if (r.parentId) {
+            childrenCountMap.set(r.parentId, (childrenCountMap.get(r.parentId) || 0) + 1);
           }
         }
 

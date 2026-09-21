@@ -36,6 +36,16 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(storefront)/loading.js"
     ],
+    "/(storefront)/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(storefront)/page.js"
+    ],
+    "/api/cart/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/cart/route.js"
+    ],
     "/(storefront)/category/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -46,35 +56,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(storefront)/category/[slug]/page.js"
     ],
-    "/(storefront)/shop/loading": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(storefront)/shop/loading.js"
-    ],
-    "/(storefront)/shop/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(storefront)/shop/page.js"
-    ],
-    "/(storefront)/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(storefront)/page.js"
-    ],
-    "/(storefront)/collections/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(storefront)/collections/loading.js"
-    ],
-    "/(storefront)/collections/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(storefront)/collections/page.js"
-    ],
-    "/(storefront)/contact/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(storefront)/contact/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

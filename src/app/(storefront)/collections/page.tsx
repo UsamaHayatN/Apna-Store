@@ -16,7 +16,8 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
+// ISR: Revalidate every 120 seconds. Collections change infrequently.
+export const revalidate = 120;
 
 export default async function CollectionsIndexPage() {
   const result = await collectionService.listCollections({ status: "published", limit: 50 });

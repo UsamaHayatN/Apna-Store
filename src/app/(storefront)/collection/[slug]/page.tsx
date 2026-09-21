@@ -7,6 +7,9 @@ import { discoveryService } from "@/lib/storefront/discovery-service";
 import { ProductListingView } from "@/components/storefront/ProductListingView";
 import { siteConfig } from "@/config/site";
 
+// ISR: Revalidate every 120 seconds for collection pages
+export const revalidate = 120;
+
 interface CollectionPageProps {
   params: Promise<{
     slug: string;

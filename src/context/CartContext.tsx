@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useRef } from "react";
 import { CartSummary } from "@/lib/cart/cart-service";
 
 interface CartContextType {
@@ -29,12 +29,17 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start false — lazy fetch
   const [isMutating, setIsMutating] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
 
   const fetchCart = useCallback(async () => {
+    // Only show loading spinner if we haven't fetched yet
+    if (!hasFetchedRef.current) {
+      setIsLoading(true);
+    }
     try {
       const res = await fetch("/api/cart", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to fetch cart");
@@ -46,15 +51,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch (err: unknown) {
       console.warn("Cart fetch warning:", err);
     } finally {
+      hasFetchedRef.current = true;
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
+  // NO useEffect — cart is fetched lazily when the drawer is opened or a cart action is taken.
 
-  const openDrawer = useCallback(() => setIsDrawerOpen(true), []);
+  const openDrawer = useCallback(() => {
+    setIsDrawerOpen(true);
+    // Lazy fetch cart when user opens the drawer
+    if (!hasFetchedRef.current) {
+      fetchCart();
+    }
+  }, [fetchCart]);
   const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
 
   const addToCart = useCallback(
@@ -81,6 +91,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
 
         setCart(data.cart);
+        hasFetchedRef.current = true;
         // Auto-open drawer for instant customer feedback
         setIsDrawerOpen(true);
         return { success: true };

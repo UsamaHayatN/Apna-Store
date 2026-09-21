@@ -118,10 +118,12 @@ class StorefrontService {
 
   /**
    * Retrieves active, featured, and prominent footwear categories for storefront display.
+   * Uses the categoryService which already handles DB + memory fallback.
+   * The result is cached for 5 minutes to avoid repeated DB queries.
    */
   async getFeaturedCategories(limit: number = 4): Promise<StorefrontCategory[]> {
     const now = Date.now();
-    if (this._featuredCategoriesCache && now - this._featuredCategoriesCache.ts < 60_000) {
+    if (this._featuredCategoriesCache && now - this._featuredCategoriesCache.ts < 300_000) {
       return this._featuredCategoriesCache.data;
     }
 
@@ -333,7 +335,8 @@ class StorefrontService {
 
   /**
    * Aggregates all homepage datasets concurrently with server-side caching / performance.
-   * Includes a safety timeout to prevent Vercel function hangs.
+   * Uses a generous 5-minute cache since ISR handles page-level caching.
+   * The timeout is raised to 18s to handle Vercel cold starts more gracefully.
    */
   async getHomepageData(): Promise<HomepageData> {
     const now = Date.now();
@@ -349,7 +352,8 @@ class StorefrontService {
     };
 
     try {
-      // Race the data fetch against a 12-second timeout (Vercel hobby plan: 10s, Pro: 60s)
+      // Race the data fetch against an 18-second timeout
+      // (Vercel Hobby: 10s function limit, but data fetch + render budget is larger)
       const dataPromise = Promise.all([
         this.getFeaturedCategories(4),
         productService.getHomepageProducts(4), // Single query for both featured + arrivals
@@ -357,7 +361,7 @@ class StorefrontService {
       ]);
 
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Homepage data fetch timed out")), 12000)
+        setTimeout(() => reject(new Error("Homepage data fetch timed out")), 18000)
       );
 
       const [featuredCategories, homepageProducts, featuredCollection] =
@@ -381,6 +385,6 @@ class StorefrontService {
 }
 
 let homepageCache: { timestamp: number; data: HomepageData } | null = null;
-const HOMEPAGE_CACHE_TTL = 60_000; // 60 seconds — reduces DB load on Vercel serverless
+const HOMEPAGE_CACHE_TTL = 300_000; // 5 minutes — ISR handles page-level caching, this is per-function instance
 
 export const storefrontService = new StorefrontService();

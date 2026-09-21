@@ -35,6 +35,31 @@ async function verifyToken(token: string): Promise<DecodedSession | null> {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // =============================================================================
+  // FAST PATH: Public storefront routes — skip JWT verification entirely
+  // Only admin and protected account routes need auth checks.
+  // =============================================================================
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isProtectedCustomerRoute = [
+    "/account/orders",
+    "/account/addresses",
+    "/account/profile",
+    "/account/settings",
+    "/account/wishlist",
+  ].some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"));
+
+  if (!isAdminRoute && !isProtectedCustomerRoute) {
+    // Pure public route — just add pathname header and pass through.
+    // No JWT verification, no cookie parsing. Saves ~50-100ms per navigation.
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-pathname", pathname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  // =============================================================================
+  // AUTH PATH: Only runs for /admin and protected /account/* routes
+  // =============================================================================
   const paramToken = request.nextUrl.searchParams.get("auth_token") || request.nextUrl.searchParams.get("token");
   const headerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   const cookieToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -49,7 +74,7 @@ export async function middleware(request: NextRequest) {
   // =============================================================================
   // 1. ADMIN ROUTE PROTECTION
   // =============================================================================
-  if (pathname.startsWith("/admin")) {
+  if (isAdminRoute) {
     // If accessing the admin login page
     if (pathname === "/admin/login") {
       // If already authenticated as staff or admin, redirect to target or admin dashboard
@@ -92,18 +117,6 @@ export async function middleware(request: NextRequest) {
   // =============================================================================
   // 2. CUSTOMER ACCOUNT SUB-ROUTES PROTECTION
   // =============================================================================
-  const protectedCustomerRoutes = [
-    "/account/orders",
-    "/account/addresses",
-    "/account/profile",
-    "/account/settings",
-    "/account/wishlist",
-  ];
-
-  const isProtectedCustomerRoute = protectedCustomerRoutes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
-  );
-
   if (isProtectedCustomerRoute && !isAuthenticated) {
     const accountUrl = new URL("/account", request.url);
     accountUrl.searchParams.set("redirect", pathname);

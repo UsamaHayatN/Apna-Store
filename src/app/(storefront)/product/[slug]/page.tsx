@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { pdpService } from "@/lib/storefront/pdp-service";
 import { ProductDetailView } from "@/components/storefront/ProductDetailView";
 
+// ISR: Revalidate every 120 seconds for product pages
+export const revalidate = 120;
+
 /* 
   PRODUCT DETAIL PAGE ROUTE (Next.js 15 App Router):
   - params MUST be awaited: params: Promise<{ slug: string }>
