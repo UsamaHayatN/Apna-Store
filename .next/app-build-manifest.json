@@ -41,11 +41,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(storefront)/page.js"
     ],
-    "/api/cart/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/cart/route.js"
-    ],
     "/(storefront)/category/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",

@@ -69,17 +69,26 @@ export function markDatabaseConnectionFailed(reason?: unknown): void {
 
 /**
  * Executes a database query with automatic connection failure detection and immediate fallback.
+ * Includes a per-query timeout to prevent hanging connections from blocking the serverless function.
  */
 export async function safeDbQuery<T>(
   queryFn: (db: ReturnType<typeof drizzle<typeof schema>>) => Promise<T>,
-  fallback: () => Promise<T> | T
+  fallback: () => Promise<T> | T,
+  timeoutMs: number = 5000
 ): Promise<T> {
   if (!isDatabaseConfigured()) {
     return fallback();
   }
   try {
     const db = getDb();
-    return await queryFn(db);
+
+    // Per-query timeout: prevents hanging connections from blocking everything
+    const queryPromise = queryFn(db);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("DB query timed out")), timeoutMs)
+    );
+
+    return await Promise.race([queryPromise, timeoutPromise]);
   } catch (err: unknown) {
     const msg = String(err);
     if (
@@ -91,13 +100,34 @@ export async function safeDbQuery<T>(
       msg.includes("SELF_SIGNED_CERT_IN_CHAIN") ||
       msg.includes("UNABLE_TO_VERIFY_LEAF_SIGNATURE") ||
       msg.includes("unable to get local issuer certificate") ||
-      msg.includes("certificate has expired")
+      msg.includes("certificate has expired") ||
+      msg.includes("timed out")
     ) {
       markDatabaseConnectionFailed(err);
     }
     console.warn("DB query failed, smoothly falling back:", err);
     return fallback();
   }
+}
+
+/**
+ * Wraps any async operation with a timeout. Returns the fallback value if the
+ * operation doesn't complete within timeoutMs.
+ */
+export async function withTimeout<T>(
+  operation: Promise<T>,
+  fallback: T,
+  timeoutMs: number = 5000,
+  label: string = "operation"
+): Promise<T> {
+  const timeoutPromise = new Promise<T>((resolve) =>
+    setTimeout(() => {
+      console.warn(`${label} timed out after ${timeoutMs}ms, using fallback`);
+      resolve(fallback);
+    }, timeoutMs)
+  );
+
+  return Promise.race([operation, timeoutPromise]);
 }
 
 let client: postgres.Sql | null = null;
@@ -116,9 +146,9 @@ function initializeDatabase(): void {
     const isProd = process.env.NODE_ENV === "production";
     const clientOptions: postgres.Options<{}> = {
       max: isProd ? 1 : 5, // max 1 for serverless/Vercel functions to prevent pool exhaustion
-      idle_timeout: 10,
-      connect_timeout: 10, // 10s for Vercel cold starts (Supabase pooler can be slow)
-      ssl: isProd ? "require" : { rejectUnauthorized: false }, // Dev: skip SSL cert verification to avoid local errors
+      idle_timeout: 5,
+      connect_timeout: 5, // 5s — fail fast on Vercel serverless cold starts
+      ssl: isProd ? "require" : { rejectUnauthorized: false },
       prepare: false, // Required for Supabase transaction/session poolers
     };
 

@@ -1716,37 +1716,64 @@ export const productService = {
    * Optimized single-query fetch for homepage: returns both featured and new arrival
    * products in one DB query instead of two separate getProducts() calls.
    * Returns { featured: Product[], newArrivals: Product[] }
+   * Each DB query has a 4-second timeout to prevent hanging.
    */
   async getHomepageProducts(limit: number = 4): Promise<{ featured: Product[]; newArrivals: Product[] }> {
+    const DB_TIMEOUT = 4000; // 4 seconds per DB operation
+
     if (isDatabaseConfigured()) {
       try {
         const db = getDb();
-        const catMap = await getCachedCategoryMap(db);
-        const typeMap = await getCachedTypeMap(db);
+
+        // Wrap each DB operation with a timeout
+        const catMapPromise = Promise.race([
+          getCachedCategoryMap(db),
+          new Promise<Map<string, Category>>((resolve) =>
+            setTimeout(() => resolve(new Map()), DB_TIMEOUT)
+          ),
+        ]);
+        const typeMapPromise = Promise.race([
+          getCachedTypeMap(db),
+          new Promise<Map<string, ProductType>>((resolve) =>
+            setTimeout(() => resolve(new Map()), DB_TIMEOUT)
+          ),
+        ]);
+
+        const [catMap, typeMap] = await Promise.all([catMapPromise, typeMapPromise]);
 
         // Single query: active products that are either featured OR new arrivals
-        const rows = await db
-          .select()
-          .from(products)
-          .where(
-            and(
-              or(eq(products.isFeatured, true), eq(products.isNewArrival, true)),
-              eq(products.status, "active"),
-              isNull(products.deletedAt)
+        const rows = await Promise.race([
+          db
+            .select()
+            .from(products)
+            .where(
+              and(
+                or(eq(products.isFeatured, true), eq(products.isNewArrival, true)),
+                eq(products.status, "active"),
+                isNull(products.deletedAt)
+              )
             )
-          )
-          .orderBy(desc(products.createdAt))
-          .limit(limit * 2); // get up to 2x limit to ensure we have enough of each
+            .orderBy(desc(products.createdAt))
+            .limit(limit * 2),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Product query timed out")), DB_TIMEOUT)
+          ),
+        ]);
 
         // Fetch media for all returned products in one query
         const productIds = rows.map((r) => r.id);
         const mediaRows =
           productIds.length > 0
-            ? await db
-                .select()
-                .from(productMedia)
-                .where(sql`${productMedia.productId} IN ${productIds}`)
-                .orderBy(asc(productMedia.sortOrder))
+            ? await Promise.race([
+                db
+                  .select()
+                  .from(productMedia)
+                  .where(sql`${productMedia.productId} IN ${productIds}`)
+                  .orderBy(asc(productMedia.sortOrder)),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new Error("Media query timed out")), DB_TIMEOUT)
+                ),
+              ])
             : [];
 
         const mapped: Product[] = rows.map((r) => {

@@ -1,6 +1,7 @@
 import { productService } from "@/lib/products/product-service";
 import { categoryService } from "@/lib/categories/category-service";
 import { collectionService } from "@/lib/collections/collection-service";
+import { withTimeout } from "@/lib/db";
 import { Product } from "@/types";
 import { siteConfig } from "@/config/site";
 
@@ -120,6 +121,7 @@ class StorefrontService {
    * Retrieves active, featured, and prominent footwear categories for storefront display.
    * Uses the categoryService which already handles DB + memory fallback.
    * The result is cached for 5 minutes to avoid repeated DB queries.
+   * Each call has a 4-second timeout to prevent hanging.
    */
   async getFeaturedCategories(limit: number = 4): Promise<StorefrontCategory[]> {
     const now = Date.now();
@@ -128,10 +130,15 @@ class StorefrontService {
     }
 
     try {
-      const allCategories = await categoryService.listCategories({
-        includeInactive: false,
-        includeArchived: false,
-      });
+      const allCategories = await withTimeout(
+        categoryService.listCategories({
+          includeInactive: false,
+          includeArchived: false,
+        }).catch(() => []),
+        [],
+        4000,
+        "categoryService.listCategories"
+      );
 
       // Filter for subcategories or featured categories (excluding the root container "men")
       const relevant = allCategories.filter(
@@ -255,13 +262,24 @@ class StorefrontService {
 
   /**
    * Retrieves the current primary featured collection with its assigned products.
+   * Each DB operation has a 4-second timeout.
    */
   async getFeaturedCollection(): Promise<StorefrontCollectionWithProducts | null> {
     try {
       // Try featured first, then fall back to any published — do both in parallel
       const [featuredRes, anyRes] = await Promise.all([
-        collectionService.listCollections({ status: "published", isFeatured: true, limit: 1 }),
-        collectionService.listCollections({ status: "published", limit: 1 }),
+        withTimeout(
+          collectionService.listCollections({ status: "published", isFeatured: true, limit: 1 }).catch(() => ({ data: [], items: [] })),
+          { data: [], items: [] },
+          4000,
+          "listCollections(featured)"
+        ),
+        withTimeout(
+          collectionService.listCollections({ status: "published", limit: 1 }).catch(() => ({ data: [], items: [] })),
+          { data: [], items: [] },
+          4000,
+          "listCollections(any)"
+        ),
       ]);
 
       const collection =
@@ -270,7 +288,12 @@ class StorefrontService {
 
       if (!collection) return null;
 
-      const assignedItems = await collectionService.getCollectionProducts(collection.id);
+      const assignedItems = await withTimeout(
+        collectionService.getCollectionProducts(collection.id).catch(() => []),
+        [],
+        4000,
+        "getCollectionProducts"
+      );
 
       // Use the product data already returned by getCollectionProducts()
       // instead of re-fetching each product by ID (avoids N+1 queries)
@@ -334,9 +357,9 @@ class StorefrontService {
   }
 
   /**
-   * Aggregates all homepage datasets concurrently with server-side caching / performance.
-   * Uses a generous 5-minute cache since ISR handles page-level caching.
-   * The timeout is raised to 18s to handle Vercel cold starts more gracefully.
+   * Aggregates all homepage datasets concurrently with per-source timeouts.
+   * Each data source has its own 5-second timeout — if one hangs, the others
+   * still complete. The page renders with whatever data arrived in time.
    */
   async getHomepageData(): Promise<HomepageData> {
     const now = Date.now();
@@ -351,36 +374,41 @@ class StorefrontService {
       featuredCollection: null,
     };
 
-    try {
-      // Race the data fetch against an 18-second timeout
-      // (Vercel Hobby: 10s function limit, but data fetch + render budget is larger)
-      const dataPromise = Promise.all([
-        this.getFeaturedCategories(4),
-        productService.getHomepageProducts(4), // Single query for both featured + arrivals
-        this.getFeaturedCollection(),
+    const TIMEOUT = 5000; // 5 seconds per data source
+
+    // Fetch each data source independently with its own timeout.
+    // If one hangs, the others still complete.
+    const [featuredCategories, homepageProducts, featuredCollection] =
+      await Promise.all([
+        withTimeout(
+          this.getFeaturedCategories(4).catch(() => []),
+          [],
+          TIMEOUT,
+          "getFeaturedCategories"
+        ),
+        withTimeout(
+          productService.getHomepageProducts(4).catch(() => ({ featured: [], newArrivals: [] })),
+          { featured: [], newArrivals: [] },
+          TIMEOUT,
+          "getHomepageProducts"
+        ),
+        withTimeout(
+          this.getFeaturedCollection().catch(() => null),
+          null,
+          TIMEOUT,
+          "getFeaturedCollection"
+        ),
       ]);
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Homepage data fetch timed out")), 18000)
-      );
+    const data: HomepageData = {
+      featuredCategories,
+      featuredProducts: homepageProducts.featured.map(toStorefrontProduct),
+      newArrivals: homepageProducts.newArrivals.map(toStorefrontProduct),
+      featuredCollection,
+    };
 
-      const [featuredCategories, homepageProducts, featuredCollection] =
-        await Promise.race([dataPromise, timeoutPromise]);
-
-      const data: HomepageData = {
-        featuredCategories,
-        featuredProducts: homepageProducts.featured.map(toStorefrontProduct),
-        newArrivals: homepageProducts.newArrivals.map(toStorefrontProduct),
-        featuredCollection,
-      };
-
-      homepageCache = { timestamp: now, data };
-      return data;
-    } catch (err) {
-      console.error("StorefrontService.getHomepageData failed, returning empty data:", err);
-      // Return empty data so the page still renders (with fallback UI)
-      return emptyData;
-    }
+    homepageCache = { timestamp: now, data };
+    return data;
   }
 }
 
